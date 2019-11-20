@@ -1,0 +1,6 @@
+[submodule "ChipArmour"]
+	path = ChipArmour
+	url = https://github.com/newaetech/ChipArmour.git
+[submodule "chipwhisperer"]
+	path = chipwhisperer
+	url = https://github.com/newaetech/chipwhisperer.git
