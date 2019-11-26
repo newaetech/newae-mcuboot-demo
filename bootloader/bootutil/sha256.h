@@ -27,7 +27,7 @@
 #ifndef __BOOTUTIL_CRYPTO_H_
 #define __BOOTUTIL_CRYPTO_H_
 
-#include <mbedtls/sha256.h>
+#include "mbedtls/include/mbedtls/sha256.h"
 
 #include <stdint.h>
 

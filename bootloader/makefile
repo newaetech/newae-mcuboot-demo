@@ -32,20 +32,34 @@
 # This is the name of the compiled .hex file.
 TARGET = NEWAE_BL
 
+
 # List C source files here.
 # Header files (.h) are automatically pulled in.
-SRC += main.c serial_abstract.c loader.c
+SRC += main.c serial_abstract.c 
 
+SRC += loader.c image_validate.c keys.c bootutil_misc.c #bootutil_priv.c flash_map.c image_rsa.c 
+
+#FUNC_SEL = NONE
 # -----------------------------------------------------------------------------
 
-FUNC_SEL = GLITCH1
-
-CFLAGS += -D$(FUNC_SEL)
-CFLAGS += --specs=nosys.specs
+#CFLAGS += -D$(FUNC_SEL)
+CFLAGS += --specs=nosys.specs #this stubs IO calls such as printf 
 
 #Add necessary chip whisperer files to project build
+
+#TODO: get this working as a standalone
+#TFMPATH = trusted_firmware_src
+#include $(TFMPATH)/Makefile.tfm
+
+MBEDTLS_PATH = ../mbedtls
+MBED_CRYPTO_PATH = ../mbed-crypto
+include $(MBEDTLS_PATH)/Makefile
+include $(MBED_CRYPTO_PATH)/Makefile
 
 FIRMWAREPATH = ../chipwhisperer/hardware/victims/firmware
 include $(FIRMWAREPATH)/simpleserial/Makefile.simpleserial
 include $(FIRMWAREPATH)/Makefile.inc
+
+
+
 

@@ -4,3 +4,9 @@
 [submodule "chipwhisperer"]
 	path = chipwhisperer
 	url = https://github.com/newaetech/chipwhisperer.git
+[submodule "mbed-crypto"]
+	path = mbed-crypto
+	url = https://github.com/ARMmbed/mbed-crypto.git
+[submodule "mbedtls"]
+	path = mbedtls
+	url = https://github.com/ARMmbed/mbedtls.git
