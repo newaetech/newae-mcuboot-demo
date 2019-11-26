@@ -1,6 +1,5 @@
 /*
-    This file is part of the NewAE Chip Armour demo
-    
+    This file is part of the ChipWhisperer Example Targets
     Copyright (C) 2012-2015 NewAE Technology Inc.
 
     This program is free software: you can redistribute it and/or modify
@@ -17,39 +16,46 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdio.h>
-#include <stdint.h>
 #include "hal.h"
-#include "bootutil/bootutil.h"
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "serial.h"
 
-int main(void)
+#define IDLE 0
+#define KEY 1
+#define PLAIN 2
+
+#define BUFLEN 64
+
+uint8_t memory[BUFLEN];
+uint8_t tmp[BUFLEN];
+char asciibuf[BUFLEN];
+uint8_t pt[16];
+
+static void delay_2_ms(void);
+
+void serial_transmit(char *c)
 {
-
-    platform_init();
-    init_uart();
-    trigger_setup();
-
-    //This is needed on XMEGA examples, but not normally on ARM. ARM doesn't have this macro normally anyway.
-    #ifdef __AVR__
-    _delay_ms(20);
-    #endif
-
-
-    /* Start of bl2_main calls */
-
-    serial_transmit("Starting bootloader...\n");    
-
-    struct boot_rsp rsp;
-    int rc;
-
-    rc = boot_go(&rsp);
-    if (rc != 0) {
-        serial_transmit("No bootable image found!\n");   
-        while (1){;}
-    }
-
-    serial_transmit("Never should have got here!\n");   
-
-    return 1;
+    do
+    {
+        putch(*c);
+    }while (*++c);
 }
+
+
+void serial_read(char *buf, int len)
+{
+    for(int i = 0; i < len; i++) {
+        while (buf[i] = getch(), buf[i] == '\0');
+
+        if (buf[i] == '\n') {
+            buf[i] = '\0';
+            return;
+        }
+    }
+    buf[len - 1] = '\0';
+}
+
+
+

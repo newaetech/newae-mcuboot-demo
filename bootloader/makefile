@@ -34,7 +34,7 @@ TARGET = NEWAE_BL
 
 # List C source files here.
 # Header files (.h) are automatically pulled in.
-SRC += main.c
+SRC += main.c loader.c serial.c
 
 # -----------------------------------------------------------------------------
 
