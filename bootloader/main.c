@@ -21,7 +21,7 @@
 #include <stdint.h>
 #include "hal.h"
 #include "bootutil/bootutil.h"
-#include "serial.h"
+#include "serial_abstract.h"
 
 int main(void)
 {

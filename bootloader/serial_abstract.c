@@ -20,7 +20,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "serial.h"
+#include "serial_abstract.h"
 
 #define IDLE 0
 #define KEY 1

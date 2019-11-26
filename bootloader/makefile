@@ -34,13 +34,14 @@ TARGET = NEWAE_BL
 
 # List C source files here.
 # Header files (.h) are automatically pulled in.
-SRC += main.c
+SRC += main.c serial_abstract.c loader.c
 
 # -----------------------------------------------------------------------------
 
 FUNC_SEL = GLITCH1
 
 CFLAGS += -D$(FUNC_SEL)
+CFLAGS += --specs=nosys.specs
 
 #Add necessary chip whisperer files to project build
 

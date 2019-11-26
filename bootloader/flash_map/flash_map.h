@@ -52,6 +52,8 @@ extern "C" {
 
 extern uint8_t current_image;
 
+#define MCUBOOT_IMAGE_NUMBER (1) /*Added by AR, TODO: identify if this is the best place for it */
+
 #if (MCUBOOT_IMAGE_NUMBER == 1)
 #define FLASH_AREA_IMAGE_PRIMARY     FLASH_AREA_0_ID
 #define FLASH_AREA_IMAGE_SECONDARY   FLASH_AREA_2_ID
