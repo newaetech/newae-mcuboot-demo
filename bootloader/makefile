@@ -1,7 +1,7 @@
 # Hey Emacs, this is a -*- makefile -*-
 #----------------------------------------------------------------------------
 #
-# Makefile for ChipWhisperer SimpleSerial-AES Program
+# Makefile for NewAE secure bootloader
 #
 #----------------------------------------------------------------------------
 # On command line:
@@ -34,7 +34,7 @@ TARGET = NEWAE_BL
 
 # List C source files here.
 # Header files (.h) are automatically pulled in.
-SRC += main.c loader.c serial.c
+SRC += main.c
 
 # -----------------------------------------------------------------------------
 
