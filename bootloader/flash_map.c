@@ -26,10 +26,11 @@
 
 #include <errno.h>
 #include <stdbool.h>
+#include "Driver_Flash.h" 
 
 #include "target.h"
 #include "bl2_util.h"
-#include "Driver_Flash.h"
+
 
 #include <flash_map/flash_map.h>
 #include "bootutil/bootutil_log.h"

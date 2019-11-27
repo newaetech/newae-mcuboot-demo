@@ -40,8 +40,8 @@
 #include "bootutil/image.h"
 #include "bootutil_priv.h"
 #include "bootutil/bootutil_log.h"
-#include "bl2/include/tfm_boot_status.h"
-#include "bl2/include/boot_record.h"
+#include "tfm_boot_status.h"
+#include "boot_record.h"
 #include "security_cnt.h"
 
 static struct boot_loader_state boot_data;

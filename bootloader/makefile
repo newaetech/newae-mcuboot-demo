@@ -32,20 +32,25 @@
 # This is the name of the compiled .hex file.
 TARGET = NEWAE_BL
 
+CRYPTO_TARGET = NONE
+CRYPTO_OPTIONS = RSA
 
 # List C source files here.
 # Header files (.h) are automatically pulled in.
 SRC += main.c serial_abstract.c 
-
-SRC += loader.c image_validate.c keys.c bootutil_misc.c #bootutil_priv.c flash_map.c image_rsa.c 
+SRC += dummy_nv_counters.c boot_record.c
+SRC += security_cnt.c loader.c  flash_map.c Driver_Flash.c image_validate.c keys.c image_rsa.c bootutil_misc.c 
 
 #FUNC_SEL = NONE
 # -----------------------------------------------------------------------------
 
+
+
 #CFLAGS += -D$(FUNC_SEL)
 CFLAGS += --specs=nosys.specs #this stubs IO calls such as printf 
 
-#Add necessary chip whisperer files to project build
+CLFLAGS += --with-system-zlib
+
 
 #TODO: get this working as a standalone
 #TFMPATH = trusted_firmware_src
@@ -53,13 +58,13 @@ CFLAGS += --specs=nosys.specs #this stubs IO calls such as printf
 
 MBEDTLS_PATH = ../mbedtls
 MBED_CRYPTO_PATH = ../mbed-crypto
-include $(MBEDTLS_PATH)/Makefile
-include $(MBED_CRYPTO_PATH)/Makefile
+#include $(MBEDTLS_PATH)/Makefile
+#include $(MBED_CRYPTO_PATH)/Makefile
 
+#Add necessary chip whisperer files to project build
 FIRMWAREPATH = ../chipwhisperer/hardware/victims/firmware
+include $(FIRMWAREPATH)/crypto/Makefile.mbedtls
+include $(FIRMWAREPATH)/crypto/Makefile.crypto
 include $(FIRMWAREPATH)/simpleserial/Makefile.simpleserial
 include $(FIRMWAREPATH)/Makefile.inc
-
-
-
 

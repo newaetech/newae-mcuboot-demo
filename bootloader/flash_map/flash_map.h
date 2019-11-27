@@ -50,6 +50,10 @@ extern "C" {
  */
 #include <inttypes.h>
 
+
+ /*Added by AR, TODO: identify if this is the best place for it */
+#define MCUBOOT_IMAGE_NUMBER (1)
+
 extern uint8_t current_image;
 
 #if (MCUBOOT_IMAGE_NUMBER == 1)

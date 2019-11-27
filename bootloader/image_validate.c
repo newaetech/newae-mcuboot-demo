@@ -36,7 +36,7 @@
 #include "security_cnt.h"
 
 #ifdef MCUBOOT_SIGN_RSA
-#include "mbedtls/rsa.h"
+#include "mbedtls/include/mbedtls/rsa.h"
 #endif
 
 #include "mbedtls/include/mbedtls/asn1.h"
