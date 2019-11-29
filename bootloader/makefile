@@ -44,13 +44,11 @@ SRC += security_cnt.c loader.c  flash_map.c Driver_Flash.c image_validate.c keys
 #FUNC_SEL = NONE
 # -----------------------------------------------------------------------------
 
-
-
 #CFLAGS += -D$(FUNC_SEL)
 CFLAGS += --specs=nosys.specs #this stubs IO calls such as printf 
 
 CLFLAGS += --with-system-zlib
-
+CFLAGS+ = -std=c99  #use c99 dialect
 
 #TODO: get this working as a standalone
 #TFMPATH = trusted_firmware_src

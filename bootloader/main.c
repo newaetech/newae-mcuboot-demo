@@ -16,21 +16,29 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-
 #include <stdio.h>
 #include <stdint.h>
-#include "hal.h"
+#include <hal.h>
+#include <stm32f303xc.h> //TODO: this is a hack to get the code to compile, find the correct way to get stm32f3xx.h included
+#include <core_cm4.h>
 #include "flash_layout.h"
 #include "Driver_Flash.h"
 #include "bootutil/bootutil.h"
 #include "bootutil/image.h"
 #include "serial_abstract.h"
 #include "Driver_Common.h"
+#include <cmsis_gcc.h>
+
 
 struct arm_vector_table {
     uint32_t msp;
     uint32_t reset;
 };
+
+/**
+ * Prototypes
+ * */
+static void do_boot(struct boot_rsp *rsp);
 
 /* Flash device name must be specified by target */
 extern ARM_DRIVER_FLASH FLASH_DEV_NAME;
@@ -50,7 +58,27 @@ int main(void)
 
     /* Start of bl2_main calls */
 
-    serial_transmit("Starting bootloader...\n");    
+    serial_transmit("Starting bootloader...\n"); 
+
+    char bootloader_password[32];
+    char bootloader_message[] = "start";    
+
+    bool is_bl_requested = false;  
+
+#if 0 /*Demo mode */
+    while(1)
+    {
+        serial_read(bootloader_password, sizeof(bootloader_password));
+
+        for(uint8_t i = 0; i < sizeof(bootloader_message); i++){
+            if (bootloader_message[i] != bootloader_password[i]){
+                is_bl_requested = true;
+                break;
+            }
+        }
+    }
+#endif
+
 
     struct boot_rsp rsp;
     int rc;
@@ -60,6 +88,11 @@ int main(void)
         serial_transmit("No bootable image found!\n");   
         while (1){;}
     }
+
+    flash_area_warn_on_open();
+    serial_transmit("Jumping to the first image slot");
+    do_boot(&rsp);
+
 
     serial_transmit("Never should have got here!\n");   
 
@@ -86,7 +119,6 @@ static void do_boot(struct boot_rsp *rsp)
      * reset vector
      */
     rc = flash_device_base(rsp->br_flash_dev_id, &flash_base);
-    assert(rc == 0);
 
     if (rsp->br_hdr->ih_flags & IMAGE_F_RAM_LOAD) {
        /* The image has been copied to SRAM, find the vector table
@@ -103,7 +135,7 @@ static void do_boot(struct boot_rsp *rsp)
 
     rc = FLASH_DEV_NAME.Uninitialize();
     if(rc != ARM_DRIVER_OK) {
-        BOOT_LOG_ERR("Error while uninitializing Flash Interface");
+        serial_transmit("Error while uninitializing Flash Interface");
     }
 
 #if BOOT_LOG_LEVEL > BOOT_LOG_LEVEL_OFF
@@ -118,7 +150,8 @@ static void do_boot(struct boot_rsp *rsp)
     __set_MSPLIM(0);
 #endif
 
-    __set_MSP(vt->msp);
+    //TODO: replace this call to set main stack pointer?: __set_MSP(vt->msp);
+
     __DSB();
     __ISB();
 
@@ -169,8 +202,8 @@ __attribute__((naked)) void boot_clear_bl2_ram_area(void)
     __asm volatile(
         ".syntax unified                             \n"
         "movs    r0, #0                              \n"
-        "ldr     r1, =Image$$ER_DATA$$Base           \n"
-        "ldr     r2, =Image$$ARM_LIB_HEAP$$ZI$$Limit \n"
+        //"ldr     r1, =Image$$ER_DATA$$Base           \n"
+        //"ldr     r2, =Image$$ARM_LIB_HEAP$$ZI$$Limit \n"
         "subs    r2, r2, r1                          \n"
         "Loop:                                       \n"
         "subs    r2, #4                              \n"
