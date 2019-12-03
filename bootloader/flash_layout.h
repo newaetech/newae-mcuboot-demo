@@ -17,7 +17,10 @@
 #ifndef __FLASH_LAYOUT_H__
 #define __FLASH_LAYOUT_H__
 
-/* Flash layout on MPS2 AN519 with BL2 (multiple image boot):
+/*
+ * Below is deprecated, only leaving in for reference 
+ * 
+ * Flash layout on MPS2 AN519 with BL2 (multiple image boot):
  *
  * 0x0000_0000 BL2 - MCUBoot (0.5 MB)
  * 0x0008_0000 Secure image     primary slot (0.5 MB)
@@ -51,6 +54,17 @@
  * 0x0010_0000 Non-secure image (1 MB)
  */
 
+/* Flash Layout for STM32F303RCT7
+ * AR Note: Leaving default partition size (512 KB)
+ * 0x0000_0000 CODE (0.5 GB) Executable data space, however, this is the recommended code space
+ * 0X2000_0000 SRAM (0.5 GB) Executable data space
+ * 0X4000_0000 PERIPHERAL (0.5 GB)
+ * 0X6000_0000 EXTERNAL RAM (1 GB)
+ * 0XA000_0000 EXTERNAL DEVICE (1.0 GB)
+ * 0XE000_0000 PRIVATE_PERIPHERAL_BUS (1.0 MB)
+ * 0XE010_0000 VENDOR MEM (511 MB)
+ */
+
 #define MAX(X,Y)                       ((X) > (Y) ? (X) : (Y))
 
 /* This header file is included from linker scatter file as well, where only a
@@ -75,7 +89,7 @@
 
 /* Flash layout info for BL2 bootloader */
 /* Same as FLASH0_BASE_S */
-#define FLASH_BASE_ADDRESS              (0x10000000)
+#define FLASH_BASE_ADDRESS              (0x00000000)
 
 /* Offset and size definitions of the flash partitions that are handled by the
  * bootloader. The image swapping is done between IMAGE_PRIMARY and

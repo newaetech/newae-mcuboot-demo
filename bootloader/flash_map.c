@@ -60,6 +60,7 @@ struct flash_map_entry {
  * flash.  In this case, it starts with FLASH_AREA_IMAGE_PRIMARY.
  */
 static struct flash_map_entry part_map[] = {
+#if (MCUBOOT_IMAGE_NUMBER == 1)
     {
         .magic = FLASH_MAP_ENTRY_MAGIC,
         .area = {
@@ -123,9 +124,20 @@ int flash_device_base(uint8_t fd_id, uintptr_t *ret)
 /*
  * `open` a flash area.  The `area` in this case is not the individual
  * sectors, but describes the particular flash area in question.
+ * 
+ * 
+ * AR Note: I think this is all that is actually needed to unlock the flash regions, however, next parts might be needed
+ * for other parts of the system, hence why they're left there for now. The static var isUnlocked protects it from multiple unlock attempts
  */
 int flash_area_open(uint8_t id, const struct flash_area **area)
-{
+{ 
+    static bool isUnlocked = false;
+    if(isUnlocked != true)
+    {
+        isUnlocked = true;
+        HAL_FLASH_Unlock();
+    }
+
     int i;
 
     BOOT_LOG_DBG("area %d", id);
@@ -141,6 +153,9 @@ int flash_area_open(uint8_t id, const struct flash_area **area)
 
     *area = &part_map[i].area;
     part_map[i].ref_count++;
+
+
+
     return 0;
 }
 
@@ -149,6 +164,15 @@ int flash_area_open(uint8_t id, const struct flash_area **area)
  */
 void flash_area_close(const struct flash_area *area)
 {
+    /*AR: Added this to go with flash_area_open */
+    static bool isLocked = false;
+    if(isLocked != true)
+    {
+        isLocked = true;
+        HAL_FLASH_Lock();
+    }
+
+
     struct flash_map_entry *entry;
 
     if (!area) {
@@ -165,6 +189,8 @@ void flash_area_close(const struct flash_area *area)
         return;
     }
     entry->ref_count--;
+
+    
 }
 
 void flash_area_warn_on_open(void)
@@ -230,6 +256,11 @@ int flash_area_write(const struct flash_area *area, uint32_t off,
 
 int flash_area_erase(const struct flash_area *area, uint32_t off, uint32_t len)
 {
+    /*AR: This should be all that's needed for actually erasing flash page */
+    uint32_t address_to_erase = area->fa_off + off; 
+
+    FLASH_PageErase(off);
+
     ARM_FLASH_INFO *flash_info;
     uint32_t deleted_len = 0;
     int32_t rc = 0;

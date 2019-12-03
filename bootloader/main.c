@@ -93,10 +93,23 @@ int main(void)
     serial_transmit("Jumping to the first image slot");
     do_boot(&rsp);
 
-
+    while(1){;}
     serial_transmit("Never should have got here!\n");   
 
     return 1;
+}
+
+typedef enum
+{
+    BOOTLOADER = 0x0,
+    APPLICATION_A,
+    APPLICATION_B,
+    APPLICATION_COUNT
+}te_app_types;
+
+void identify_boot_request(te_app_types requested_app)
+{
+    
 }
 
 /**

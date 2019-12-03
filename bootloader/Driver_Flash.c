@@ -48,7 +48,7 @@
 #define FLASH_REDIRECT_DEST   0x38000000
 
 #define FLASH0_BASE_S         0x10000000
-#define FLASH0_BASE_NS        0x00000000
+#define FLASH0_BASE_NS        0x00000000 
 #define FLASH0_SIZE           0x00800000 /* 8 MB */
 #define FLASH0_SECTOR_SIZE    0x00001000 /* 4 kB */
 #define FLASH0_PAGE_SIZE      0x00001000 /* 4 kB */
