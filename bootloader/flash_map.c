@@ -34,6 +34,8 @@
 
 #include <flash_map/flash_map.h>
 #include "bootutil/bootutil_log.h"
+#include "stm32f3xx_hal_flash.h"
+#include "stm32f3xx_hal_flash_ex.h"
 
 /* Flash device name must be specified by target */
 extern ARM_DRIVER_FLASH FLASH_DEV_NAME;
@@ -79,7 +81,7 @@ static struct flash_map_entry part_map[] = {
             .fa_size = FLASH_AREA_2_SIZE,
         },
     },
-#if (MCUBOOT_IMAGE_NUMBER == 2)
+#elif (MCUBOOT_IMAGE_NUMBER == 2)
     {
         .magic = FLASH_MAP_ENTRY_MAGIC,
         .area = {
@@ -251,6 +253,7 @@ int flash_area_write(const struct flash_area *area, uint32_t off,
                      const void *src, uint32_t len)
 {
     BOOT_LOG_DBG("write area=%d, off=%#x, len=%#x", area->fa_id, off, len);
+    HAL_FLASH_Program(0, off, src);
     return FLASH_DEV_NAME.ProgramData(area->fa_off + off, src, len);
 }
 
