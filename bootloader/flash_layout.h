@@ -55,14 +55,10 @@
  */
 
 /* Flash Layout for STM32F303RCT7
- * AR Note: Leaving default partition size (512 KB)
- * 0x0000_0000 CODE (0.5 GB) Executable data space, however, this is the recommended code space
- * 0X2000_0000 SRAM (0.5 GB) Executable data space
- * 0X4000_0000 PERIPHERAL (0.5 GB)
- * 0X6000_0000 EXTERNAL RAM (1 GB)
- * 0XA000_0000 EXTERNAL DEVICE (1.0 GB)
- * 0XE000_0000 PRIVATE_PERIPHERAL_BUS (1.0 MB)
- * 0XE010_0000 VENDOR MEM (511 MB)
+ * 0x00000000 - 0x0003FFF (256KB) Main Flash or SRAM depending on config see pg. 54 of datasheet
+ * 0x00004000 - 0x007FFFF (128M) Reserved
+ * 0x08000000 - 0x0803FFFF (256KB) Main flash (never SRAM)
+ * 0x08040000 - 0x0FFF FFFFF (128M) Reserved
  */
 
 #define MAX(X,Y)                       ((X) > (Y) ? (X) : (Y))
@@ -75,8 +71,8 @@
  */
 
 /* Size of a Secure and of a Non-secure image */
-#define FLASH_S_PARTITION_SIZE          (0x80000) /* S partition: 512 KB */
-#define FLASH_NS_PARTITION_SIZE         (0x80000) /* NS partition: 512 KB */
+#define FLASH_S_PARTITION_SIZE          (0x20000) /* S partition: 128 KB */
+#define FLASH_NS_PARTITION_SIZE         (0x20000) /* NS partition: 128 KB */
 #define FLASH_MAX_PARTITION_SIZE        ((FLASH_S_PARTITION_SIZE >   \
                                           FLASH_NS_PARTITION_SIZE) ? \
                                          FLASH_S_PARTITION_SIZE :    \
@@ -97,8 +93,7 @@
  * swapping.
  */
 #define FLASH_AREA_BL2_OFFSET      (0x0)
-#define FLASH_AREA_BL2_SIZE        (0x80000) /* 512 KB */
-
+#define FLASH_AREA_BL2_SIZE        (0x20000) 
 #if !defined(MCUBOOT_IMAGE_NUMBER) || (MCUBOOT_IMAGE_NUMBER == 1)
 /* Secure + Non-secure image primary slot */
 #define FLASH_AREA_0_ID            (1)

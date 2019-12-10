@@ -27,15 +27,10 @@
 #include <errno.h>
 #include <stdbool.h>
 #include "Driver_Flash.h" 
-
 #include "target.h"
 #include "bl2_util.h"
-
-
 #include <flash_map/flash_map.h>
 #include "bootutil/bootutil_log.h"
-#include "stm32f3xx_hal_flash.h"
-#include "stm32f3xx_hal_flash_ex.h"
 
 /* Flash device name must be specified by target */
 extern ARM_DRIVER_FLASH FLASH_DEV_NAME;
@@ -133,13 +128,6 @@ int flash_device_base(uint8_t fd_id, uintptr_t *ret)
  */
 int flash_area_open(uint8_t id, const struct flash_area **area)
 { 
-    static bool isUnlocked = false;
-    if(isUnlocked != true)
-    {
-        isUnlocked = true;
-        HAL_FLASH_Unlock();
-    }
-
     int i;
 
     BOOT_LOG_DBG("area %d", id);
@@ -166,15 +154,6 @@ int flash_area_open(uint8_t id, const struct flash_area **area)
  */
 void flash_area_close(const struct flash_area *area)
 {
-    /*AR: Added this to go with flash_area_open */
-    static bool isLocked = false;
-    if(isLocked != true)
-    {
-        isLocked = true;
-        HAL_FLASH_Lock();
-    }
-
-
     struct flash_map_entry *entry;
 
     if (!area) {
@@ -253,7 +232,6 @@ int flash_area_write(const struct flash_area *area, uint32_t off,
                      const void *src, uint32_t len)
 {
     BOOT_LOG_DBG("write area=%d, off=%#x, len=%#x", area->fa_id, off, len);
-    HAL_FLASH_Program(0, off, src);
     return FLASH_DEV_NAME.ProgramData(area->fa_off + off, src, len);
 }
 

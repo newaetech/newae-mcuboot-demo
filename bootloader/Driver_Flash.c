@@ -30,8 +30,13 @@
 #include <string.h>
 #include <stdint.h>
 #include "RTE_Device.h"
+#include <stm32f3xx_hal_flash.h>
 #include "Driver_Flash.h"
 #include "flash_layout.h"
+#include "stm32f3xx_hal_flash_ex.h"
+
+typedef unsigned long uint32_t;
+typedef long int32_t;
 
 #ifndef ARG_UNUSED
 #define ARG_UNUSED(arg)  ((void)arg)
@@ -151,13 +156,14 @@ static ARM_FLASH_CAPABILITIES ARM_Flash_GetCapabilities(void)
 static int32_t ARM_Flash_Initialize(ARM_Flash_SignalEvent_t cb_event)
 {
     ARG_UNUSED(cb_event);
-    /* Nothing to be done */
+    HAL_FLASH_Unlock();
     return ARM_DRIVER_OK;
 }
 
 static int32_t ARM_Flash_Uninitialize(void)
 {
     /* Nothing to be done */
+    HAL_FLASH_Lock();
     return ARM_DRIVER_OK;
 }
 
@@ -214,9 +220,18 @@ static int32_t ARM_Flash_ProgramData(uint32_t addr, const void *data,
 
     /* Redirecting SST storage to BRAM */
     if (addr >= FLASH_REDIRECT_BASE && addr <= FLASH_REDIRECT_LIMIT) {
+
         start_addr = FLASH_REDIRECT_DEST + (addr - FLASH_REDIRECT_BASE);
         /* SST Flash is emulated over BRAM. use memcpy function. */
-        memcpy((void *)start_addr, data, cnt);
+        //memcpy((void *)start_addr, data, cnt);
+
+        //cnt is times by two as it is in bytes and HAL_Flash_Program writes two bytes
+        for(uint32_t bytes_wrote = 0; bytes_wrote >= cnt*2; bytes_wrote += 2)
+        {
+            /*The smallest data size that this can write is a half word (16 bits)*/
+            HAL_FLASH_Program(1, addr + bytes_wrote, (uint16_t)(&data + bytes_wrote));
+        }
+        
     } else {
         /* Flash driver for QSPI is not ready */
         return ARM_DRIVER_ERROR_UNSUPPORTED;
@@ -237,10 +252,13 @@ static int32_t ARM_Flash_EraseSector(uint32_t addr)
     /* Redirecting SST storage to BRAM */
     if (addr >= FLASH_REDIRECT_BASE && addr <= FLASH_REDIRECT_LIMIT) {
         /* SST Flash IS emulated over BRAM. use memcpy function. */
-        memset((void *)(FLASH_REDIRECT_DEST
+        /*memset((void *)(FLASH_REDIRECT_DEST
                               + (addr - FLASH_REDIRECT_BASE)),
                      FLASH0_DEV->data->erased_value,
-                     FLASH0_DEV->data->sector_size);
+                     FLASH0_DEV->data->sector_size); */
+        FLASH_PageErase(addr);
+
+
     } else {
         /* Flash driver for QSPI is not ready */
         return ARM_DRIVER_ERROR_UNSUPPORTED;

@@ -29,6 +29,16 @@
 #include "Driver_Common.h"
 #include <cmsis_gcc.h>
 
+/*Always ensure that these are in sync with the values in LinkerScript.ld (STM32F3...)*/
+
+#define SECTION_LENGTH (0x8000000)
+
+#define BL_ORIGIN (0x0)
+#define SHARED_ORIGIN (BL_ORIGIN + SECTION_LENGTH)
+#define APPA_ORIGIN (SHARED_ORIGIN + SECTION_LENGTH)
+#define APPB_ORIGIN (APPA_ORIGIN + SECTION_LENGTH)
+
+#define APP_START (APPA_ORIGIN)
 
 struct arm_vector_table {
     uint32_t msp;
@@ -39,6 +49,7 @@ struct arm_vector_table {
  * Prototypes
  * */
 static void do_boot(struct boot_rsp *rsp);
+void jump_to_app();
 
 /* Flash device name must be specified by target */
 extern ARM_DRIVER_FLASH FLASH_DEV_NAME;
@@ -83,6 +94,13 @@ int main(void)
     struct boot_rsp rsp;
     int rc;
 
+    rc = boot_nv_security_counter_init();
+    if (rc != 0) {
+        serial_transmit("Error while initializing the security counter");
+        while (1)
+            ;
+    }
+
     rc = boot_go(&rsp);
     if (rc != 0) {
         serial_transmit("No bootable image found!\n");   
@@ -90,7 +108,7 @@ int main(void)
     }
 
     flash_area_warn_on_open();
-    serial_transmit("Jumping to the first image slot");
+    serial_transmit("Jumping to the first image slot-- Address at 0x08000000");
     do_boot(&rsp);
 
     while(1){;}
