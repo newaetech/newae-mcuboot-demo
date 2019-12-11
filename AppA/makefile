@@ -39,7 +39,7 @@ CRYPTO_OPTIONS = RSA
 # Header files (.h) are automatically pulled in.
 SRC += main_A.c
 
-APP_TYPE = APP_B
+APP_TYPE = APP_A
 
 #FUNC_SEL = NONE
 # -----------------------------------------------------------------------------
