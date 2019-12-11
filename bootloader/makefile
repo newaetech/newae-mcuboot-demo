@@ -35,6 +35,8 @@ TARGET = NEWAE_BL
 CRYPTO_TARGET = NONE
 CRYPTO_OPTIONS = RSA
 
+APP_TYPE = APP_MAIN
+
 # List C source files here.
 # Header files (.h) are automatically pulled in.
 SRC += main.c serial_abstract.c 
