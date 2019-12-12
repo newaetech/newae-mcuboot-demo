@@ -92,7 +92,7 @@
  * IMAGE_SECONDARY, SCRATCH is used as a temporary storage during image
  * swapping.
  */
-#define FLASH_AREA_BL2_OFFSET      (0x0)
+#define FLASH_AREA_BL2_OFFSET      (0x8000000)
 #define FLASH_AREA_BL2_SIZE        (0x20000) 
 #if !defined(MCUBOOT_IMAGE_NUMBER) || (MCUBOOT_IMAGE_NUMBER == 1)
 /* Secure + Non-secure image primary slot */

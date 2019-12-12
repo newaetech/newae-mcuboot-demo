@@ -22,23 +22,13 @@
 #include <stm32f303xc.h> //TODO: this is a hack to get the code to compile, find the correct way to get stm32f3xx.h included
 #include <core_cm4.h>
 #include "flash_layout.h"
+#include "flash_map/flash_map.h"
 #include "Driver_Flash.h"
 #include "bootutil/bootutil.h"
 #include "bootutil/image.h"
 #include "serial_abstract.h"
 #include "Driver_Common.h"
 #include <cmsis_gcc.h>
-
-/*Always ensure that these are in sync with the values in LinkerScript.ld (STM32F3...)*/
-
-#define SECTION_LENGTH (0x8000000)
-
-#define BL_ORIGIN (0x0)
-#define SHARED_ORIGIN (BL_ORIGIN + SECTION_LENGTH)
-#define APPA_ORIGIN (SHARED_ORIGIN + SECTION_LENGTH)
-#define APPB_ORIGIN (APPA_ORIGIN + SECTION_LENGTH)
-
-#define APP_START (APPA_ORIGIN)
 
 struct arm_vector_table {
     uint32_t msp;
@@ -181,12 +171,21 @@ static void do_boot(struct boot_rsp *rsp)
     __set_MSPLIM(0);
 #endif
 
+    extern void *_app_start[];
+
+    asm("cpsid i");
+    asm("ldr sp, = _estack");
+    ((void(*)())_app_start[1])();
+
+#if 0 //TODO: remove if nothing here is worth keeping
+
     //TODO: replace this call to set main stack pointer?: __set_MSP(vt->msp);
 
     __DSB();
     __ISB();
 
     boot_jump_to_next_image(vt->reset);
+#endif
 }
 
 /*!
