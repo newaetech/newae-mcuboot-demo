@@ -107,19 +107,6 @@ int main(void)
     return 1;
 }
 
-typedef enum
-{
-    BOOTLOADER = 0x0,
-    APPLICATION_A,
-    APPLICATION_B,
-    APPLICATION_COUNT
-}te_app_types;
-
-void identify_boot_request(te_app_types requested_app)
-{
-    
-}
-
 /**
  * Copied over from bl2_main.c
  */

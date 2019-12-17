@@ -71,29 +71,29 @@
  */
 
 /* Size of a Secure and of a Non-secure image */
-#define FLASH_S_PARTITION_SIZE          (0x10000) /* S partition: 64 KB */
-#define FLASH_NS_PARTITION_SIZE         (0x10000) /* NS partition: 64 KB */
+#define FLASH_S_PARTITION_SIZE          (0x4000) /* S partition: 32 KB */
+#define FLASH_NS_PARTITION_SIZE         (0x4000) /* NS partition: 32 KB */
 #define FLASH_MAX_PARTITION_SIZE        ((FLASH_S_PARTITION_SIZE >   \
                                           FLASH_NS_PARTITION_SIZE) ? \
                                          FLASH_S_PARTITION_SIZE :    \
                                          FLASH_NS_PARTITION_SIZE)
 
 /* Sector size of the flash hardware; same as FLASH0_SECTOR_SIZE */
-#define FLASH_AREA_IMAGE_SECTOR_SIZE    (0x1000)   /* 4 KB */
+#define FLASH_AREA_IMAGE_SECTOR_SIZE    (0x260)   /* 2 KB */
 /* Same as FLASH0_SIZE */
-#define FLASH_TOTAL_SIZE                (0x00400000) /* 4 MB */
+#define FLASH_TOTAL_SIZE                (0x00300000) /* 4 MB */
 
 /* Flash layout info for BL2 bootloader */
 /* Same as FLASH0_BASE_S */
-#define FLASH_BASE_ADDRESS              (0x00000000)
+#define FLASH_BASE_ADDRESS              (0x08000000)
 
 /* Offset and size definitions of the flash partitions that are handled by the
  * bootloader. The image swapping is done between IMAGE_PRIMARY and
  * IMAGE_SECONDARY, SCRATCH is used as a temporary storage during image
  * swapping.
  */
-#define FLASH_AREA_BL2_OFFSET      (0x8000000)
-#define FLASH_AREA_BL2_SIZE        (0x20000) 
+#define FLASH_AREA_BL2_OFFSET      (0x0000000)
+#define FLASH_AREA_BL2_SIZE        (0x10000) 
 #if !defined(MCUBOOT_IMAGE_NUMBER) || (MCUBOOT_IMAGE_NUMBER == 1)
 /* Secure + Non-secure image primary slot */
 #define FLASH_AREA_0_ID            (1)
@@ -162,12 +162,12 @@
 /* Secure Storage (SST) Service definitions */
 #define FLASH_SST_AREA_OFFSET           (FLASH_AREA_SCRATCH_OFFSET + \
                                          FLASH_AREA_SCRATCH_SIZE)
-#define FLASH_SST_AREA_SIZE             (0x5000)   /* 20 KB */
+#define FLASH_SST_AREA_SIZE             (0x1000)   
 
 /* Internal Trusted Storage (ITS) Service definitions */
 #define FLASH_ITS_AREA_OFFSET           (FLASH_SST_AREA_OFFSET + \
                                          FLASH_SST_AREA_SIZE)
-#define FLASH_ITS_AREA_SIZE             (0x4000)   /* 16 KB */
+#define FLASH_ITS_AREA_SIZE             (0x1000)   
 
 /* NV Counters definitions */
 #define FLASH_NV_COUNTERS_AREA_OFFSET   (FLASH_ITS_AREA_OFFSET + \

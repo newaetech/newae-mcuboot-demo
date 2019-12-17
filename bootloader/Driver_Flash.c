@@ -50,14 +50,15 @@ typedef long int32_t;
                                + FLASH_SST_AREA_SIZE \
                                + FLASH_ITS_AREA_SIZE \
                                + FLASH_NV_COUNTERS_AREA_SIZE)
-#define FLASH_REDIRECT_DEST   0x38000000
+#define FLASH_REDIRECT_DEST   0x20000400//NOTE AR: From where this is used is supposed to be volatile memory (BRAM). Using SRAM at the end
+                                       //which should workout to 12K + 0x20000000 = 0x20000400
 
-#define FLASH0_BASE_S         0x10000000
-#define FLASH0_BASE_NS        0x00000000 
-#define FLASH0_SIZE           0x00800000 /* 8 MB */
-#define FLASH0_SECTOR_SIZE    0x00001000 /* 4 kB */
-#define FLASH0_PAGE_SIZE      0x00001000 /* 4 kB */
-#define FLASH0_PROGRAM_UNIT   0x1        /* Minimum write size */
+#define FLASH0_BASE_S         0x80100000
+#define FLASH0_BASE_NS        0x00180000
+#define FLASH0_SIZE 0x40000
+#define FLASH0_SECTOR_SIZE    0x0000800 //2 kB 
+#define FLASH0_PAGE_SIZE      0x0000800 //2 kB 
+#define FLASH0_PROGRAM_UNIT   0x1        // Minimum write size 
 
 /*
  * ARM FLASH device structure
@@ -83,6 +84,10 @@ static const ARM_FLASH_CAPABILITIES DriverCapabilities = {
     1  /* erase_chip */
 };
 
+//TODO AR: remove debug variables
+volatile uint32_t debug_flash_limit = 0;
+volatile uint32_t debug_offset = 0;
+
 static int32_t is_range_valid(struct arm_flash_dev_t *flash_dev,
                               uint32_t offset)
 {
@@ -91,6 +96,9 @@ static int32_t is_range_valid(struct arm_flash_dev_t *flash_dev,
 
     flash_limit = (flash_dev->data->sector_count * flash_dev->data->sector_size)
                    - 1;
+
+    debug_flash_limit = flash_limit;
+    debug_offset = offset;
 
     if (offset > flash_limit) {
         rc = -1;
@@ -109,14 +117,23 @@ static int32_t is_write_aligned(struct arm_flash_dev_t *flash_dev,
     return rc;
 }
 
-static int32_t is_sector_aligned(struct arm_flash_dev_t *flash_dev,
+volatile uint32_t debug_sector_size = 0;
+
+//TODO: this was static
+volatile int32_t is_sector_aligned(struct arm_flash_dev_t *flash_dev,
                                  uint32_t offset)
 {
+
     int32_t rc = 0;
 
     if ((offset % flash_dev->data->sector_size) != 0) {
         rc = -1;
+        debug_offset = offset;
+        debug_sector_size = flash_dev->data->sector_size;
     }
+    debug_offset = offset;
+    debug_sector_size = flash_dev->data->sector_size;
+
     return rc;
 }
 
@@ -214,6 +231,7 @@ static int32_t ARM_Flash_ProgramData(uint32_t addr, const void *data,
     rc  = is_range_valid(FLASH0_DEV, addr + cnt);
     rc |= is_write_aligned(FLASH0_DEV, addr);
     rc |= is_write_aligned(FLASH0_DEV, cnt);
+
     if (rc != 0) {
         return ARM_DRIVER_ERROR_PARAMETER;
     }
