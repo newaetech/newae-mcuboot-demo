@@ -84,10 +84,6 @@ static const ARM_FLASH_CAPABILITIES DriverCapabilities = {
     1  /* erase_chip */
 };
 
-//TODO AR: remove debug variables
-volatile uint32_t debug_flash_limit = 0;
-volatile uint32_t debug_offset = 0;
-
 static int32_t is_range_valid(struct arm_flash_dev_t *flash_dev,
                               uint32_t offset)
 {
@@ -96,9 +92,6 @@ static int32_t is_range_valid(struct arm_flash_dev_t *flash_dev,
 
     flash_limit = (flash_dev->data->sector_count * flash_dev->data->sector_size)
                    - 1;
-
-    debug_flash_limit = flash_limit;
-    debug_offset = offset;
 
     if (offset > flash_limit) {
         rc = -1;
@@ -117,10 +110,7 @@ static int32_t is_write_aligned(struct arm_flash_dev_t *flash_dev,
     return rc;
 }
 
-volatile uint32_t debug_sector_size = 0;
-
-//TODO: this was static
-volatile int32_t is_sector_aligned(struct arm_flash_dev_t *flash_dev,
+static int32_t is_sector_aligned(struct arm_flash_dev_t *flash_dev,
                                  uint32_t offset)
 {
 
@@ -128,12 +118,7 @@ volatile int32_t is_sector_aligned(struct arm_flash_dev_t *flash_dev,
 
     if ((offset % flash_dev->data->sector_size) != 0) {
         rc = -1;
-        debug_offset = offset;
-        debug_sector_size = flash_dev->data->sector_size;
     }
-    debug_offset = offset;
-    debug_sector_size = flash_dev->data->sector_size;
-
     return rc;
 }
 
