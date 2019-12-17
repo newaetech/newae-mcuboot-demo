@@ -53,8 +53,8 @@ typedef long int32_t;
 #define FLASH_REDIRECT_DEST   0x20000400//NOTE AR: From where this is used is supposed to be volatile memory (BRAM). Using SRAM at the end
                                        //which should workout to 12K + 0x20000000 = 0x20000400
 
-#define FLASH0_BASE_S         0x80100000
-#define FLASH0_BASE_NS        0x00180000
+#define FLASH0_BASE_S         0x08010000 //Start at writable space, not at bootloader
+#define FLASH0_BASE_NS        0x00180000 //TODO: Not used
 #define FLASH0_SIZE 0x40000
 #define FLASH0_SECTOR_SIZE    0x0000800 //2 kB 
 #define FLASH0_PAGE_SIZE      0x0000800 //2 kB 
@@ -93,9 +93,13 @@ static int32_t is_range_valid(struct arm_flash_dev_t *flash_dev,
     flash_limit = (flash_dev->data->sector_count * flash_dev->data->sector_size)
                    - 1;
 
+    offset -= FLASH0_BASE_S; //AR Fix: previously this wouldn't consider where flash actually started
+                                    //Assumed 0
+
     if (offset > flash_limit) {
         rc = -1;
     }
+
     return rc;
 }
 
@@ -186,8 +190,9 @@ static int32_t ARM_Flash_PowerControl(ARM_POWER_STATE state)
 
 static int32_t ARM_Flash_ReadData(uint32_t addr, void *data, uint32_t cnt)
 {
-    volatile uint32_t mem_base = FLASH0_DEV->memory_base;
-    uint32_t start_addr = mem_base + addr;
+    //uint32_t start_addr = FLASH0_DEV->memory_base + addr;
+    uint32_t start_addr = addr;
+
     int32_t rc = 0;
 
     /* Check flash memory boundaries */
@@ -195,13 +200,8 @@ static int32_t ARM_Flash_ReadData(uint32_t addr, void *data, uint32_t cnt)
     if (rc != 0) {
         return ARM_DRIVER_ERROR_PARAMETER;
     }
-
-    /* Redirecting SST storage to BRAM */
-    if (addr >= FLASH_REDIRECT_BASE && addr <= FLASH_REDIRECT_LIMIT) {
-        start_addr = FLASH_REDIRECT_DEST + (addr - FLASH_REDIRECT_BASE);
-    }
-
-    memcpy(data, (void *)start_addr, cnt);
+		
+    memcpy(data, (void*)start_addr, cnt);
     return ARM_DRIVER_OK;
 }
 

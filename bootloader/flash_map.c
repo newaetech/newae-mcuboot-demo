@@ -121,10 +121,6 @@ int flash_device_base(uint8_t fd_id, uintptr_t *ret)
 /*
  * `open` a flash area.  The `area` in this case is not the individual
  * sectors, but describes the particular flash area in question.
- * 
- * 
- * AR Note: I think this is all that is actually needed to unlock the flash regions, however, next parts might be needed
- * for other parts of the system, hence why they're left there for now. The static var isUnlocked protects it from multiple unlock attempts
  */
 int flash_area_open(uint8_t id, const struct flash_area **area)
 { 
@@ -199,6 +195,7 @@ int flash_area_read(const struct flash_area *area, uint32_t off, void *dst,
                     uint32_t len)
 {
     BOOT_LOG_DBG("read area=%d, off=%#x, len=%#x", area->fa_id, off, len);
+
     return FLASH_DEV_NAME.ReadData(area->fa_off + off, dst, len);
 }
 

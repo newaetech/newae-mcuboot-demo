@@ -71,17 +71,17 @@
  */
 
 /* Size of a Secure and of a Non-secure image */
-#define FLASH_S_PARTITION_SIZE          (0x4000) /* S partition: 32 KB */
-#define FLASH_NS_PARTITION_SIZE         (0x4000) /* NS partition: 32 KB */
+#define FLASH_S_PARTITION_SIZE          (0x8000) /* S partition: 32 KB */
+#define FLASH_NS_PARTITION_SIZE         (0x8000) /* NS partition: 32 KB */
 #define FLASH_MAX_PARTITION_SIZE        ((FLASH_S_PARTITION_SIZE >   \
                                           FLASH_NS_PARTITION_SIZE) ? \
                                          FLASH_S_PARTITION_SIZE :    \
                                          FLASH_NS_PARTITION_SIZE)
 
 /* Sector size of the flash hardware; same as FLASH0_SECTOR_SIZE */
-#define FLASH_AREA_IMAGE_SECTOR_SIZE    (0x260)   /* 2 KB */
+#define FLASH_AREA_IMAGE_SECTOR_SIZE    (0x800)   /* 2 KB */
 /* Same as FLASH0_SIZE */
-#define FLASH_TOTAL_SIZE                (0x00300000) /* 4 MB */
+ #define FLASH_TOTAL_SIZE                (0x40000) /*128 pages at 2kb each = 256kb */
 
 /* Flash layout info for BL2 bootloader */
 /* Same as FLASH0_BASE_S */
@@ -92,8 +92,8 @@
  * IMAGE_SECONDARY, SCRATCH is used as a temporary storage during image
  * swapping.
  */
-#define FLASH_AREA_BL2_OFFSET      (0x0000000)
-#define FLASH_AREA_BL2_SIZE        (0x10000) 
+#define FLASH_AREA_BL2_OFFSET      FLASH_BASE_ADDRESS
+#define FLASH_AREA_BL2_SIZE        (0x6000) 
 #if !defined(MCUBOOT_IMAGE_NUMBER) || (MCUBOOT_IMAGE_NUMBER == 1)
 /* Secure + Non-secure image primary slot */
 #define FLASH_AREA_0_ID            (1)
