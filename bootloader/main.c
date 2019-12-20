@@ -61,48 +61,33 @@ int main(void)
 
     serial_transmit("Starting bootloader...\n"); 
 
-    char bootloader_password[32];
-    char bootloader_message[] = "start";    
-
-    bool is_bl_requested = false;  
-
-#if 0 /*Demo mode */
-    while(1)
-    {
-        serial_read(bootloader_password, sizeof(bootloader_password));
-
-        for(uint8_t i = 0; i < sizeof(bootloader_message); i++){
-            if (bootloader_message[i] != bootloader_password[i]){
-                is_bl_requested = true;
-                break;
-            }
-        }
-    }
-#endif
-
-
     struct boot_rsp rsp;
     int rc;
 
     rc = boot_nv_security_counter_init();
     if (rc != 0) {
-        serial_transmit("Error while initializing the security counter");
         while (1)
-            ;
+        {
+            serial_transmit("Error while initializing the security counter");
+        }
     }
 
     rc = boot_go(&rsp);
     if (rc != 0) {
-        serial_transmit("No bootable image found!\n");   
-        while (1){;}
+        while (1)
+        {
+            serial_transmit("No bootable image found!\n");   
+        }
     }
 
     flash_area_warn_on_open();
     serial_transmit("Jumping to the first image slot-- Address at 0x08000000");
     do_boot(&rsp);
 
-    while(1){;}
-    serial_transmit("Never should have got here!\n");   
+    while(1)
+    {
+        serial_transmit("Never should have got here!\n");  
+    } 
 
     return 1;
 }
@@ -158,23 +143,18 @@ static void do_boot(struct boot_rsp *rsp)
     __set_MSPLIM(0);
 #endif
 
+    jump_to_application();
+}
+
+volatile void jump_to_application()
+{    
     extern void *_app_start[];
 
     asm("cpsid i");
     asm("ldr sp, = _estack");
     ((void(*)())_app_start[1])();
 
-#if 0 //TODO: remove if nothing here is worth keeping
-
-    //TODO: replace this call to set main stack pointer?: __set_MSP(vt->msp);
-
-    __DSB();
-    __ISB();
-
-    boot_jump_to_next_image(vt->reset);
-#endif
 }
-
 /*!
  * 
  * \brief Chain-loading the next image in the boot sequence.

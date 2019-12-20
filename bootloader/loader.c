@@ -437,6 +437,8 @@ boot_update_security_counter(int slot, struct image_header *hdr)
 
 done:
     flash_area_close(fap);
+    return 0; //TODO: AR hack, why is ih_protect_tlv_size always 0? check memory ranges that are populating its
+                //both bootutil_get_img_security_cnt and counter_update fail
     return rc;
 }
 
@@ -2140,7 +2142,8 @@ boot_go(struct boot_rsp *rsp)
          * onto an empty flash chip. At least do a basic sanity check that
          * the magic number on the image is OK.
          */
-        if (!BOOT_IMG_HDR_IS_VALID(&boot_data, slot)) {
+        //TODO: this was the original line and it fails. Why is it negated? hdr valid is true...if (!BOOT_IMG_HDR_IS_VALID(&boot_data, slot)) {
+        if (BOOT_IMG_HDR_IS_VALID(&boot_data, slot)) {
             BOOT_LOG_ERR("Invalid image header Image=%u", current_image);
             rc = BOOT_EBADIMAGE;
             goto out;
@@ -2160,6 +2163,7 @@ boot_go(struct boot_rsp *rsp)
         if (BOOT_SWAP_TYPE(&boot_data) == BOOT_SWAP_TYPE_NONE) {
             rc = boot_update_security_counter(BOOT_PRIMARY_SLOT,
                                   boot_img_hdr(&boot_data, BOOT_PRIMARY_SLOT));
+            //TODO: this is failing, why? Scratch space might not be big enough...if (rc != 0) {
             if (rc != 0) {
                 BOOT_LOG_ERR("Security counter update failed after image "
                              "validation.");

@@ -1,1 +1,0 @@
-SRC += image_validate.c keys.c bootutil_misc.c bootutil_priv.h flash_map.c image_rsa.c loader.c

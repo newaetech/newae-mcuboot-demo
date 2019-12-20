@@ -45,6 +45,7 @@ typedef long int32_t;
 /* Driver version */
 #define ARM_FLASH_DRV_VERSION ARM_DRIVER_VERSION_MAJOR_MINOR(1, 0)
 
+/*
 #define FLASH_REDIRECT_BASE   SST_FLASH_AREA_ADDR
 #define FLASH_REDIRECT_LIMIT  (FLASH_REDIRECT_BASE   \
                                + FLASH_SST_AREA_SIZE \
@@ -52,13 +53,17 @@ typedef long int32_t;
                                + FLASH_NV_COUNTERS_AREA_SIZE)
 #define FLASH_REDIRECT_DEST   0x20000400//NOTE AR: From where this is used is supposed to be volatile memory (BRAM). Using SRAM at the end
                                        //which should workout to 12K + 0x20000000 = 0x20000400
+*/
 
-#define FLASH0_BASE_S         0x08010000 //Start at writable space, not at bootloader
+#define FLASH0_BASE_S         0x08006000 //Start at writable space, not at bootloader
 #define FLASH0_BASE_NS        0x00180000 //TODO: Not used
-#define FLASH0_SIZE 0x40000
+#define FLASH0_SIZE           0x40000
 #define FLASH0_SECTOR_SIZE    0x0000800 //2 kB 
 #define FLASH0_PAGE_SIZE      0x0000800 //2 kB 
 #define FLASH0_PROGRAM_UNIT   0x1        // Minimum write size 
+
+#define FLASH_REDIRECT_BASE FLASH0_BASE_S
+#define FLASH_REDIRECT_LIMIT FLASH_REGION_1_MAX
 
 /*
  * ARM FLASH device structure
@@ -84,21 +89,34 @@ static const ARM_FLASH_CAPABILITIES DriverCapabilities = {
     1  /* erase_chip */
 };
 
+volatile uint32_t debug_offset = 0;
+volatile uint32_t debug_flash_min = 0;
+volatile uint32_t debug_flash_max = 0;
+
+volatile uint32_t debug_flash_base = 0;
+
 static int32_t is_range_valid(struct arm_flash_dev_t *flash_dev,
                               uint32_t offset)
 {
+    debug_offset = offset;
+    debug_flash_base = FLASH0_BASE_S;
+
     uint32_t flash_limit = 0;
-    int32_t rc = 0;
+    volatile int32_t rc = 0;
 
-    flash_limit = (flash_dev->data->sector_count * flash_dev->data->sector_size)
-                   - 1;
-
-    offset -= FLASH0_BASE_S; //AR Fix: previously this wouldn't consider where flash actually started
-                                    //Assumed 0
-
-    if (offset > flash_limit) {
+    if (offset > FLASH0_BASE_S && offset < FLASH_REGION_1_MAX) 
+    {
+        rc = 0;
+    }
+    else
+    {
         rc = -1;
     }
+    
+
+    debug_offset = offset;
+    debug_flash_min = FLASH0_BASE_S;
+    debug_flash_max = FLASH_REGION_1_MAX;
 
     return rc;
 }
@@ -224,10 +242,6 @@ static int32_t ARM_Flash_ProgramData(uint32_t addr, const void *data,
     /* Redirecting SST storage to BRAM */
     if (addr >= FLASH_REDIRECT_BASE && addr <= FLASH_REDIRECT_LIMIT) {
 
-        start_addr = FLASH_REDIRECT_DEST + (addr - FLASH_REDIRECT_BASE);
-        /* SST Flash is emulated over BRAM. use memcpy function. */
-        //memcpy((void *)start_addr, data, cnt);
-
         //cnt is times by two as it is in bytes and HAL_Flash_Program writes two bytes
         for(uint32_t bytes_wrote = 0; bytes_wrote >= cnt*2; bytes_wrote += 2)
         {
@@ -269,8 +283,12 @@ static int32_t ARM_Flash_EraseSector(uint32_t addr)
     return ARM_DRIVER_OK;
 }
 
+//AR: Unused
 static int32_t ARM_Flash_EraseChip(void)
 {
+
+    return 0;
+#if 0
     uint32_t i;
     uint32_t addr = FLASH0_DEV->memory_base;
     int32_t rc = ARM_DRIVER_ERROR_UNSUPPORTED;
@@ -295,6 +313,7 @@ static int32_t ARM_Flash_EraseChip(void)
         }
     }
     return rc;
+#endif
 }
 
 static ARM_FLASH_STATUS ARM_Flash_GetStatus(void)

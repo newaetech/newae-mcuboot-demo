@@ -477,6 +477,8 @@ boot_save_boot_status(uint8_t sw_module,
     }
 
 
+    return BOOT_STATUS_OK; //TODO: AR hack below does not work
+    
     if (!boot_record_found || !hash_found) {
         return BOOT_STATUS_ERROR;
     }

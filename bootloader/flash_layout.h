@@ -83,16 +83,14 @@
 /* Same as FLASH0_SIZE */
  #define FLASH_TOTAL_SIZE                (0x40000) /*128 pages at 2kb each = 256kb */
 
-/* Flash layout info for BL2 bootloader */
-/* Same as FLASH0_BASE_S */
-#define FLASH_BASE_ADDRESS              (0x08000000)
+
 
 /* Offset and size definitions of the flash partitions that are handled by the
  * bootloader. The image swapping is done between IMAGE_PRIMARY and
  * IMAGE_SECONDARY, SCRATCH is used as a temporary storage during image
  * swapping.
  */
-#define FLASH_AREA_BL2_OFFSET      FLASH_BASE_ADDRESS
+#define FLASH_AREA_BL2_OFFSET      0x8000000
 #define FLASH_AREA_BL2_SIZE        (0x6000) 
 #if !defined(MCUBOOT_IMAGE_NUMBER) || (MCUBOOT_IMAGE_NUMBER == 1)
 /* Secure + Non-secure image primary slot */
@@ -100,6 +98,12 @@
 #define FLASH_AREA_0_OFFSET        (FLASH_AREA_BL2_OFFSET + FLASH_AREA_BL2_SIZE)
 #define FLASH_AREA_0_SIZE          (FLASH_S_PARTITION_SIZE + \
                                     FLASH_NS_PARTITION_SIZE)
+
+                                    /* Flash layout info for BL2 bootloader */
+/* Same as FLASH0_BASE_S */
+#define FLASH_BASE_ADDRESS              (FLASH_AREA_0_OFFSET)
+#define FLASH_REGION_1_MAX              (0x0803FFFF)
+
 /* Secure + Non-secure secondary slot */
 #define FLASH_AREA_2_ID            (FLASH_AREA_0_ID + 1)
 #define FLASH_AREA_2_OFFSET        (FLASH_AREA_0_OFFSET + FLASH_AREA_0_SIZE)
@@ -159,6 +163,15 @@
 #error "Only MCUBOOT_IMAGE_NUMBER 1 and 2 are supported!"
 #endif /* MCUBOOT_IMAGE_NUMBER */
 
+/* Flash device name used by BL2
+ * Name is defined in flash driver file: Driver_Flash.c
+ */
+#define FLASH_DEV_NAME Driver_FLASH0
+
+
+//#define DISABLE_SST_ITS_FEATURE
+
+#ifdef DISABLE_SST_ITS_FEATURE 
 /* Secure Storage (SST) Service definitions */
 #define FLASH_SST_AREA_OFFSET           (FLASH_AREA_SCRATCH_OFFSET + \
                                          FLASH_AREA_SCRATCH_SIZE)
@@ -182,10 +195,6 @@
                                          SECURE_IMAGE_MAX_SIZE)
 #define NON_SECURE_IMAGE_MAX_SIZE       FLASH_NS_PARTITION_SIZE
 
-/* Flash device name used by BL2
- * Name is defined in flash driver file: Driver_Flash.c
- */
-#define FLASH_DEV_NAME Driver_FLASH0
 
 /* Secure Storage (SST) Service definitions
  * Note: Further documentation of these definitions can be found in the
@@ -239,6 +248,9 @@
 #define TFM_NV_COUNTERS_SECTOR_ADDR  FLASH_NV_COUNTERS_AREA_OFFSET
 #define TFM_NV_COUNTERS_SECTOR_SIZE  FLASH_AREA_IMAGE_SECTOR_SIZE
 
+
+#endif /*DISABLE_SST_ITS_FEATURE*/
+
 /* Use SRAM1 memory to store Code data */
 #define S_ROM_ALIAS_BASE  (0x10000000)
 #define NS_ROM_ALIAS_BASE (0x00000000)
@@ -249,5 +261,18 @@
 
 #define TOTAL_ROM_SIZE FLASH_TOTAL_SIZE
 #define TOTAL_RAM_SIZE (0x200000)     /* 2 MB */
+
+
+/*Attempt at fixing */
+/* NV Counters definitions */
+#define TFM_NV_COUNTERS_AREA_ADDR    (FLASH_AREA_SCRATCH_OFFSET + \
+                                         FLASH_AREA_SCRATCH_SIZE)
+#define TFM_NV_COUNTERS_AREA_SIZE    (0x18) /* 24 Bytes */
+#define TFM_NV_COUNTERS_SECTOR_ADDR  TFM_NV_COUNTERS_AREA_ADDR
+#define TFM_NV_COUNTERS_SECTOR_SIZE  0x800
+
+#if (TFM_NV_COUNTERS_AREA_ADDR + TFM_NV_COUNTERS_SECTOR_SIZE) > FLASH_REGION_1_MAX
+#error Allocated FLASH ROM exceeds limit 
+#endif
 
 #endif /* __FLASH_LAYOUT_H__ */
