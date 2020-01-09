@@ -80,6 +80,8 @@
 
 /* Sector size of the flash hardware; same as FLASH0_SECTOR_SIZE */
 #define FLASH_AREA_IMAGE_SECTOR_SIZE    (0x800)   /* 2 KB */
+
+#define FLASH_AREA_PAGE_SIZE    FLASH_AREA_IMAGE_SECTOR_SIZE
 /* Same as FLASH0_SIZE */
  #define FLASH_TOTAL_SIZE                (0x40000) /*128 pages at 2kb each = 256kb */
 
@@ -268,7 +270,7 @@
 #define TFM_NV_COUNTERS_AREA_ADDR    (FLASH_AREA_SCRATCH_OFFSET + \
                                          FLASH_AREA_SCRATCH_SIZE)
 #define TFM_NV_COUNTERS_AREA_SIZE    (0x18) /* 24 Bytes */
-#define TFM_NV_COUNTERS_SECTOR_ADDR  TFM_NV_COUNTERS_AREA_ADDR
+#define TFM_NV_COUNTERS_SECTOR_ADDR  0x803F800//TODO AR: this address was used to make sure it aligned with pagesTFM_NV_COUNTERS_AREA_ADDR
 #define TFM_NV_COUNTERS_SECTOR_SIZE  0x800
 
 #if (TFM_NV_COUNTERS_AREA_ADDR + TFM_NV_COUNTERS_SECTOR_SIZE) > FLASH_REGION_1_MAX

@@ -70,9 +70,11 @@ extern ARM_DRIVER_FLASH FLASH_DEV_NAME;
 
 enum tfm_plat_err_t tfm_plat_init_nv_counter(void)
 {
+    
     int32_t err;
     uint32_t i;
-    struct nv_counters_t nv_counters = {{0}};
+    
+    volatile struct nv_counters_t nv_counters = {{0}};
 
     err = FLASH_DEV_NAME.Initialize(NULL);
     if (err != ARM_DRIVER_OK) {
@@ -102,8 +104,9 @@ enum tfm_plat_err_t tfm_plat_init_nv_counter(void)
         nv_counters.counters[i] = 0;
     }
 
-    /* Erase sector before write in it */
+    /* Erase sector before write in it*/
     err = FLASH_DEV_NAME.EraseSector(TFM_NV_COUNTERS_SECTOR_ADDR);
+    
     if (err != ARM_DRIVER_OK) {
         return TFM_PLAT_ERR_SYSTEM_ERR;
     }

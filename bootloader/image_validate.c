@@ -173,6 +173,9 @@ bootutil_find_key(uint8_t *keyhash, uint8_t keyhash_len)
 #endif
 #endif
 
+//TODO AR: remove debug
+volatile uint32_t debug_vlt_size = 0;
+
 /**
  * Reads the value of an image's security counter.
  *
@@ -234,6 +237,7 @@ bootutil_get_img_security_cnt(struct image_header *hdr,
 
                 if (tlv.it_len != sizeof(*img_security_cnt)) {
                     /* Security counter is not valid. */
+                    debug_vlt_size =sizeof(*img_security_cnt);
                     break;
                 }
 
@@ -262,9 +266,6 @@ bootutil_get_img_security_cnt(struct image_header *hdr,
     if (found) {
         return 0;
     }
-
-    return 0; //TODO AR: early return hack, remove when tlv_size issue is resolved
-
     return -1;
 }
 

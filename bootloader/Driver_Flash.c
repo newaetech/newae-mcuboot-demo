@@ -30,13 +30,27 @@
 #include <string.h>
 #include <stdint.h>
 #include "RTE_Device.h"
-#include <stm32f3xx_hal_flash.h>
+#include "stm32f3xx_hal_flash.h"
 #include "Driver_Flash.h"
 #include "flash_layout.h"
 #include "stm32f3xx_hal_flash_ex.h"
+#include "serial_abstract.h"
 
 typedef unsigned long uint32_t;
 typedef long int32_t;
+
+#define BL_PAGE_COUNT           (FLASH_AREA_BL2_SIZE / FLASH_AREA_PAGE_SIZE) 
+#define APP_SPACE_PAGE_COUNT    (FLASH_AREA_0_SIZE / FLASH_AREA_PAGE_SIZE) 
+
+typedef struct
+{
+    uint32_t page[FLASH_AREA_PAGE_SIZE];
+}ts_flash_page_layout;
+
+typedef struct FL_STM32F303
+{
+    
+}ts_flash_layout;
 
 #ifndef ARG_UNUSED
 #define ARG_UNUSED(arg)  ((void)arg)
@@ -65,6 +79,10 @@ typedef long int32_t;
 #define FLASH_REDIRECT_BASE FLASH0_BASE_S
 #define FLASH_REDIRECT_LIMIT FLASH_REGION_1_MAX
 
+static inline void flash_unlock(void);
+static inline void flash_lock(void);
+static int8_t MemMap_Flash_WriteWord(uint32_t address, uint32_t word);
+
 /*
  * ARM FLASH device structure
  */
@@ -89,12 +107,16 @@ static const ARM_FLASH_CAPABILITIES DriverCapabilities = {
     1  /* erase_chip */
 };
 
+/*Prototypes*/
+static int32_t ARM_Flash_EraseSector(uint32_t addr);
+
 volatile uint32_t debug_offset = 0;
 volatile uint32_t debug_flash_min = 0;
 volatile uint32_t debug_flash_max = 0;
 
 volatile uint32_t debug_flash_base = 0;
 
+//TODO AR: flash_dev could hold ranges to make some of this more generic
 static int32_t is_range_valid(struct arm_flash_dev_t *flash_dev,
                               uint32_t offset)
 {
@@ -104,12 +126,13 @@ static int32_t is_range_valid(struct arm_flash_dev_t *flash_dev,
     uint32_t flash_limit = 0;
     volatile int32_t rc = 0;
 
-    if (offset > FLASH0_BASE_S && offset < FLASH_REGION_1_MAX) 
+    if (offset >= FLASH0_BASE_S && offset <= FLASH_REGION_1_MAX) 
     {
         rc = 0;
     }
     else
     {
+        boot_transmit_error_code_serial(100,offset);  
         rc = -1;
     }
     
@@ -179,8 +202,8 @@ static ARM_FLASH_CAPABILITIES ARM_Flash_GetCapabilities(void)
 
 static int32_t ARM_Flash_Initialize(ARM_Flash_SignalEvent_t cb_event)
 {
-    ARG_UNUSED(cb_event);
-    HAL_FLASH_Unlock();
+    //ARG_UNUSED(cb_event);
+    //HAL_FLASH_Unlock();
     return ARM_DRIVER_OK;
 }
 
@@ -206,8 +229,13 @@ static int32_t ARM_Flash_PowerControl(ARM_POWER_STATE state)
     }
 }
 
+volatile uint32_t debug_read_addr = 0;
+volatile uint32_t debug_read_cnt = 0;
+volatile uint32_t debug_read_rc = 0;
 static int32_t ARM_Flash_ReadData(uint32_t addr, void *data, uint32_t cnt)
 {
+    debug_read_addr = addr;
+    debug_read_cnt = cnt;
     //uint32_t start_addr = FLASH0_DEV->memory_base + addr;
     uint32_t start_addr = addr;
 
@@ -215,19 +243,49 @@ static int32_t ARM_Flash_ReadData(uint32_t addr, void *data, uint32_t cnt)
 
     /* Check flash memory boundaries */
     rc = is_range_valid(FLASH0_DEV, addr + cnt);
+    debug_read_rc = rc;
     if (rc != 0) {
         return ARM_DRIVER_ERROR_PARAMETER;
     }
 		
     memcpy(data, (void*)start_addr, cnt);
+    
     return ARM_DRIVER_OK;
 }
+
+volatile uint32_t debug_cnt = 0;
+volatile uint32_t debug_addr = 0;
+volatile uint32_t debug_bytes_wrote = 0;
+volatile FLASH_TypeDef debug_flash;
+volatile uint32_t sample_read = 0;
 
 static int32_t ARM_Flash_ProgramData(uint32_t addr, const void *data,
                                      uint32_t cnt)
 {
+    char str[64];
+
+    if(addr == FLASH_AREA_2_OFFSET)
+    {
+        volatile uint16_t break_here = 0;
+        break_here++;
+    }
+
+    if(cnt == 1)
+    {
+        return ARM_DRIVER_OK; //TODO AR: remove debug code
+    }
+
+    if(cnt % 2 != 0)
+    {
+        cnt++;
+    }
+
+
+    serial_transmit("Starting programming...\n");
+    debug_addr = addr;
+    debug_cnt = cnt;
+
     volatile uint32_t mem_base = FLASH0_DEV->memory_base;
-    uint32_t start_addr = mem_base + addr;
     int32_t rc = 0;
 
     /* Check flash memory boundaries and alignment with minimal write size */
@@ -238,23 +296,101 @@ static int32_t ARM_Flash_ProgramData(uint32_t addr, const void *data,
     if (rc != 0) {
         return ARM_DRIVER_ERROR_PARAMETER;
     }
+    debug_bytes_wrote = 0;
+    //cnt is times by two as it is in bytes and HAL_Flash_Program writes two bytes
+    volatile uint32_t bytes_wrote = 0;
 
-    /* Redirecting SST storage to BRAM */
-    if (addr >= FLASH_REDIRECT_BASE && addr <= FLASH_REDIRECT_LIMIT) {
+    flash_unlock();
 
-        //cnt is times by two as it is in bytes and HAL_Flash_Program writes two bytes
-        for(uint32_t bytes_wrote = 0; bytes_wrote >= cnt*2; bytes_wrote += 2)
-        {
-            /*The smallest data size that this can write is a half word (16 bits)*/
-            HAL_FLASH_Program(1, addr + bytes_wrote, (uint16_t)(&data + bytes_wrote));
-        }
+    uint32_t end_address = addr + cnt;
+
+    sprintf(str, "Start Addr: %x, End Addr: %x Cnt: %x \n", addr, end_address, cnt);
+    serial_transmit(str); 
+
+    for(bytes_wrote = 0; bytes_wrote < cnt; bytes_wrote+=2)
+    {
+        /*The smallest data size that this can write is a half word (16 bits)*/
+        //TODO AR: remove debug code 
+        //sprintf(str, "Just wrote at: Addr: %x, Bytes Wrote: %x At Address: %x \n", addr, bytes_wrote, addr + bytes_wrote);
+        //serial_transmit(str);
+        HAL_FLASH_Program(1, addr + bytes_wrote, (uint16_t)(&data + bytes_wrote));
+
+        //memcpy(&sample_read, addr + bytes_wrote, sizeof(uint16_t));
         
-    } else {
-        /* Flash driver for QSPI is not ready */
-        return ARM_DRIVER_ERROR_UNSUPPORTED;
+        //memcpy(&debug_flash, FLASH, sizeof(FLASH_TypeDef));
+        //debug_bytes_wrote = bytes_wrote;
     }
+
+    flash_lock();
+    
+    serial_transmit("End of programming...\n");
     return ARM_DRIVER_OK;
 }
+
+#define FLASH_TIMEOUT (1000)
+static int8_t
+MemMap_Flash_WriteWord(uint32_t address, uint32_t word)
+{
+	uint32_t timeout = FLASH_TIMEOUT;
+
+	while(FLASH->SR & FLASH_SR_BSY)
+	{
+		if(--timeout == 0)
+		{
+			return -1;
+		}
+	}
+
+	FLASH->CR |= FLASH_CR_PG;
+
+	*(__IO uint16_t*)address = (uint16_t)word;
+
+	timeout = 1000;
+	while(FLASH->SR & FLASH_SR_BSY)
+	{
+		if(--timeout == 0)
+		{
+			return -1;
+		}
+	}
+
+	address += 2;
+	*(__IO uint16_t*)address = (uint16_t)(word >> 16);
+
+	timeout = FLASH_TIMEOUT;
+	while(FLASH->SR & FLASH_SR_BSY)
+	{
+		if(--timeout == 0)
+		{
+			return -1;
+		}
+	}
+
+	FLASH->CR &= ~FLASH_CR_PG;
+
+	return 1;
+}
+
+#define FLASH_UNLOCK_KEY1	0x45670123
+#define	FLASH_UNLOCK_KEY2	0xCDEF89AB
+
+static inline void flash_unlock(void)
+{
+	if(FLASH->CR & FLASH_CR_LOCK)
+	{
+		FLASH->KEYR = FLASH_UNLOCK_KEY1;
+		FLASH->KEYR = FLASH_UNLOCK_KEY2;
+        /* Authorizes the Option Byte register programming */
+        FLASH->OPTKEYR = FLASH_OPTKEY1;
+        FLASH->OPTKEYR = FLASH_OPTKEY2;
+	}
+}
+
+static inline void flash_lock(void)
+{
+	FLASH->CR |= FLASH_CR_LOCK;
+}
+
 
 static int32_t ARM_Flash_EraseSector(uint32_t addr)
 {
@@ -265,23 +401,12 @@ static int32_t ARM_Flash_EraseSector(uint32_t addr)
     if (rc != 0) {
         return ARM_DRIVER_ERROR_PARAMETER;
     }
-
-    /* Redirecting SST storage to BRAM */
-    if (addr >= FLASH_REDIRECT_BASE && addr <= FLASH_REDIRECT_LIMIT) {
-        /* SST Flash IS emulated over BRAM. use memcpy function. */
-        /*memset((void *)(FLASH_REDIRECT_DEST
-                              + (addr - FLASH_REDIRECT_BASE)),
-                     FLASH0_DEV->data->erased_value,
-                     FLASH0_DEV->data->sector_size); */
-        FLASH_PageErase(addr);
-
-
-    } else {
-        /* Flash driver for QSPI is not ready */
-        return ARM_DRIVER_ERROR_UNSUPPORTED;
-    }
+    
+    FLASH_PageErase(addr);
     return ARM_DRIVER_OK;
 }
+
+volatile uint32_t debug_index = 0;
 
 //AR: Unused
 static int32_t ARM_Flash_EraseChip(void)

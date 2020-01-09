@@ -35,6 +35,7 @@
 #include "bootutil/bootutil.h"
 #include "bootutil_priv.h"
 #include "bootutil/bootutil_log.h"
+#include "serial_abstract.h"
 
 int boot_current_slot;
 
@@ -751,4 +752,11 @@ bool
 boot_add_uint16_overflow_check(uint16_t a, uint16_t b)
 {
     return (a > UINT16_MAX - b);
+}
+
+void boot_transmit_error_code_serial(uint16_t error_code, uint32_t debug_var)
+{
+    char str[64];
+    sprintf(str, "Error Code: %u Address: %lu   \n",error_code,debug_var);
+    serial_transmit(str);
 }

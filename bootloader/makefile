@@ -43,7 +43,7 @@ SRC += main.c serial_abstract.c
 SRC += dummy_nv_counters.c boot_record.c
 SRC += security_cnt.c loader.c  flash_map.c Driver_Flash.c image_validate.c keys.c image_rsa.c bootutil_misc.c 
 
-OPT = 1
+#OPT = 3
 
 #FUNC_SEL = NONE
 # -----------------------------------------------------------------------------

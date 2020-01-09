@@ -179,7 +179,6 @@ typedef struct _ARM_FLASH_CAPABILITIES {
   uint32_t reserved     : 28;           ///< Reserved (must be zero)
 } ARM_FLASH_CAPABILITIES;
 
-
 /**
 \brief Access structure of the Flash Driver
 */

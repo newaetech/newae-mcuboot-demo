@@ -165,16 +165,23 @@ boot_verify_image_header(struct image_header *hdr)
     uint32_t image_end;
 
     if (hdr->ih_magic != IMAGE_MAGIC) {
+        
+
+        boot_transmit_error_code_serial(1060, hdr->ih_magic);
+        boot_transmit_error_code_serial(1061, hdr->ih_load_addr);
+        boot_transmit_error_code_serial(1062, IMAGE_MAGIC);
         return BOOT_EBADIMAGE;
     }
 
     /* Check input parameters against integer overflow */
     if (boot_add_uint32_overflow_check(hdr->ih_hdr_size, hdr->ih_img_size)) {
+        boot_transmit_error_code_serial(104, image_end);
         return BOOT_EBADIMAGE;
     }
 
     image_end = hdr->ih_hdr_size + hdr->ih_img_size;
     if (boot_add_uint32_overflow_check(image_end, hdr->ih_protect_tlv_size)) {
+                boot_transmit_error_code_serial(105, image_end);
         return BOOT_EBADIMAGE;
     }
 
@@ -204,12 +211,14 @@ boot_read_image_header(int slot, struct image_header *out_hdr)
     rc = flash_area_open(area_id, &fap);
     if (rc != 0) {
         rc = BOOT_EFLASH;
+        boot_transmit_error_code_serial(101, rc);
         goto done;
     }
 
     rc = flash_area_read(fap, 0, out_hdr, sizeof(*out_hdr));
     if (rc != 0) {
         rc = BOOT_EFLASH;
+        boot_transmit_error_code_serial(102, rc);
         goto done;
     }
 
@@ -390,6 +399,7 @@ boot_validate_slot(int slot, struct boot_status *bs)
         }
         BOOT_LOG_ERR("Authentication failed! Image in the %s slot is not valid."
                      , (slot == BOOT_PRIMARY_SLOT) ? "primary" : "secondary");
+        boot_transmit_error_code_serial(8, slot);               
         rc = -1;
         goto out;
     }
@@ -417,28 +427,32 @@ boot_update_security_counter(int slot, struct image_header *hdr)
 {
     const struct flash_area *fap = NULL;
     uint32_t img_security_cnt;
-    int rc;
+    int rc = 0;
+    int debug_fail = 0; //TODO AR: remove debug
 
     rc = flash_area_open(flash_area_id_from_image_slot(slot), &fap);
     if (rc != 0) {
         rc = BOOT_EFLASH;
+        debug_fail = 1;
         goto done;
     }
 
     rc = bootutil_get_img_security_cnt(hdr, fap, &img_security_cnt);
     if (rc != 0) {
+                debug_fail = 2;
         goto done;
     }
 
     rc = boot_nv_security_counter_update(current_image, img_security_cnt);
     if (rc != 0) {
+                debug_fail = 3;
         goto done;
     }
 
 done:
     flash_area_close(fap);
-    return 0; //TODO: AR hack, why is ih_protect_tlv_size always 0? check memory ranges that are populating its
-                //both bootutil_get_img_security_cnt and counter_update fail
+    boot_transmit_error_code_serial(29, debug_fail);
+        boot_transmit_error_code_serial(29, rc);
     return rc;
 }
 
@@ -570,6 +584,7 @@ boot_slots_compatible(void)
     if ((num_sectors_primary > BOOT_MAX_IMG_SECTORS) ||
         (num_sectors_secondary > BOOT_MAX_IMG_SECTORS)) {
         BOOT_LOG_WRN("Cannot upgrade: more sectors than allowed");
+        boot_transmit_error_code_serial(22, num_sectors_primary); 
         return 0;
     }
 
@@ -599,6 +614,7 @@ boot_slots_compatible(void)
             if (smaller == 2) {
                 BOOT_LOG_WRN("Cannot upgrade: slots have non-compatible"
                              " sectors");
+                boot_transmit_error_code_serial(23, num_sectors_primary);              
                 return 0;
             }
             smaller = 1;
@@ -611,6 +627,7 @@ boot_slots_compatible(void)
             if (smaller == 1) {
                 BOOT_LOG_WRN("Cannot upgrade: slots have non-compatible"
                              " sectors");
+                boot_transmit_error_code_serial(24, num_sectors_primary);              
                 return 0;
             }
             smaller = 2;
@@ -625,6 +642,9 @@ boot_slots_compatible(void)
             if (sz0 > scratch_sz || sz1 > scratch_sz) {
                 BOOT_LOG_WRN("Cannot upgrade: not all sectors fit inside"
                              " scratch");
+                boot_transmit_error_code_serial(25, scratch_sz);
+                boot_transmit_error_code_serial(25, sz0);
+                boot_transmit_error_code_serial(25, sz1);             
                 return 0;
             }
             smaller = sz0 = sz1 = 0;
@@ -635,6 +655,9 @@ boot_slots_compatible(void)
         (j != num_sectors_secondary) ||
         (primary_slot_sz != secondary_slot_sz)) {
         BOOT_LOG_WRN("Cannot upgrade: slots are not compatible");
+        boot_transmit_error_code_serial(26, i);
+        boot_transmit_error_code_serial(26, j);
+        boot_transmit_error_code_serial(26, num_sectors_primary);
         return 0;
     }
 
@@ -699,6 +722,7 @@ boot_read_status_bytes(const struct flash_area *fap, struct boot_status *bs)
          * swap. Tell user and move on to validation!
          */
         BOOT_LOG_ERR("Detected inconsistent status!");
+        boot_transmit_error_code_serial(9, found_idx);  
 
 #if !defined(MCUBOOT_VALIDATE_PRIMARY_SLOT)
         /* With validation of the primary slot disabled, there is no way
@@ -1355,7 +1379,7 @@ boot_copy_image(struct boot_status *bs)
  *
  * @return                      0 on success; nonzero on failure.
  */
-static int
+int //TODO AR: this was static
 boot_swap_image(struct boot_status *bs)
 {
     uint32_t sz;
@@ -1727,7 +1751,7 @@ boot_verify_all_image_dependency(void)
  *
  * @return                      0 on success; nonzero on failure.
  */
-static int
+int //TODO AR: this was static
 boot_perform_update(struct boot_status *bs)
 {
     int rc;
@@ -1768,6 +1792,7 @@ boot_perform_update(struct boot_status *bs)
         if (rc != 0) {
             BOOT_LOG_ERR("Security counter update failed after "
                          "image upgrade.");
+            boot_transmit_error_code_serial(10, bs->idx);               
             BOOT_SWAP_TYPE(&boot_data) = BOOT_SWAP_TYPE_PANIC;
         }
     }
@@ -1828,6 +1853,7 @@ boot_complete_partial_swap(struct boot_status *bs)
 
     if (BOOT_SWAP_TYPE(&boot_data) == BOOT_SWAP_TYPE_PANIC) {
         BOOT_LOG_ERR("panic!");
+        boot_transmit_error_code_serial(11, bs->idx);  
         assert(0);
 
         /* Loop forever... */
@@ -1894,6 +1920,8 @@ boot_review_image_swap_types(bool aborted_swap)
 }
 #endif
 
+volatile uint32_t debug_swap_type = 0;
+
 /**
  * Prepare image to be updated if required.
  *
@@ -1914,6 +1942,7 @@ boot_prepare_image_for_update(struct boot_status *bs)
     if (rc != 0) {
         BOOT_LOG_WRN("Failed reading sectors; BOOT_MAX_IMG_SECTORS=%d"
                      " - too small?", BOOT_MAX_IMG_SECTORS);
+        boot_transmit_error_code_serial(27, rc);             
         /* Unable to determine sector layout, continue with next image
          * if there is one.
          */
@@ -1926,6 +1955,7 @@ boot_prepare_image_for_update(struct boot_status *bs)
     if (rc != 0) {
         /* Continue with next image if there is one. */
         BOOT_LOG_WRN("Failed reading image headers; Image=%u", current_image);
+        boot_transmit_error_code_serial(28, rc); 
         BOOT_SWAP_TYPE(&boot_data) = BOOT_SWAP_TYPE_NONE;
         return;
     }
@@ -1977,10 +2007,13 @@ boot_prepare_image_for_update(struct boot_status *bs)
             /* There was no partial swap, determine swap type. */
             if (bs->swap_type == BOOT_SWAP_TYPE_NONE) {
                 BOOT_SWAP_TYPE(&boot_data) = boot_validated_swap_type(bs);
+                debug_swap_type = 1;
             } else if (boot_validate_slot(BOOT_SECONDARY_SLOT, bs) != 0) {
                 BOOT_SWAP_TYPE(&boot_data) = BOOT_SWAP_TYPE_FAIL;
+                debug_swap_type = 2;
             } else {
                 BOOT_SWAP_TYPE(&boot_data) = bs->swap_type;
+                debug_swap_type = 3;
             }
 
 #if (BOOT_IMAGE_NUMBER > 1)
@@ -2072,6 +2105,8 @@ boot_go(struct boot_rsp *rsp)
         /* Set the previously determined swap type */
         bs.swap_type = BOOT_SWAP_TYPE(&boot_data);
 
+        //TODO AR: remove debug code, original ((in use)): switch (BOOT_SWAP_TYPE(&boot_data)) {
+        //int debug_switch = BOOT_SWAP_TYPE_REVERT;
         switch (BOOT_SWAP_TYPE(&boot_data)) {
         case BOOT_SWAP_TYPE_NONE:
             break;
@@ -2103,6 +2138,7 @@ boot_go(struct boot_rsp *rsp)
 
         if (BOOT_SWAP_TYPE(&boot_data) == BOOT_SWAP_TYPE_PANIC) {
             BOOT_LOG_ERR("panic!");
+            boot_transmit_error_code_serial(12,current_image);  
             assert(0);
 
             /* Loop forever... */
@@ -2142,9 +2178,11 @@ boot_go(struct boot_rsp *rsp)
          * onto an empty flash chip. At least do a basic sanity check that
          * the magic number on the image is OK.
          */
-        //TODO: this was the original line and it fails. Why is it negated? hdr valid is true...if (!BOOT_IMG_HDR_IS_VALID(&boot_data, slot)) {
+        //TODO: this was the original line and it fails. Why is it negated? hdr valid is true, can't find in mcuboot either
+        //if (!BOOT_IMG_HDR_IS_VALID(&boot_data, slot)) {
         if (BOOT_IMG_HDR_IS_VALID(&boot_data, slot)) {
             BOOT_LOG_ERR("Invalid image header Image=%u", current_image);
+            boot_transmit_error_code_serial(13,slot);  
             rc = BOOT_EBADIMAGE;
             goto out;
         }
@@ -2163,10 +2201,12 @@ boot_go(struct boot_rsp *rsp)
         if (BOOT_SWAP_TYPE(&boot_data) == BOOT_SWAP_TYPE_NONE) {
             rc = boot_update_security_counter(BOOT_PRIMARY_SLOT,
                                   boot_img_hdr(&boot_data, BOOT_PRIMARY_SLOT));
-            //TODO: this is failing, why? Scratch space might not be big enough...if (rc != 0) {
+            //TODO AR: this is failing, why? Scratch space might not be big enough...if (rc != 0) {
             if (rc != 0) {
                 BOOT_LOG_ERR("Security counter update failed after image "
                              "validation.");
+
+                boot_transmit_error_code_serial(14,rc);               
                 goto out;
             }
         }
@@ -2186,6 +2226,7 @@ boot_go(struct boot_rsp *rsp)
         if (rc) {
             BOOT_LOG_ERR("Failed to add Image %u data to shared area",
                          current_image);
+            boot_transmit_error_code_serial(15,current_image);    
         }
     }
 

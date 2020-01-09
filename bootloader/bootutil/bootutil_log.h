@@ -40,10 +40,13 @@ extern "C" {
 #endif
 
 int sim_log_enabled(int level);
+void boot_transmit_error_code_serial(uint16_t error_code, uint32_t debug_var);
+
 
 #if BOOT_LOG_LEVEL >= BOOT_LOG_LEVEL_ERROR
 #define BOOT_LOG_ERR(_fmt, ...)                  \
     printf("[ERR] " _fmt "\r\n", ##__VA_ARGS__)
+
 #else
 #define BOOT_LOG_ERR(...) IGNORE(__VA_ARGS__)
 #endif

@@ -29,6 +29,7 @@
 #include "serial_abstract.h"
 #include "Driver_Common.h"
 #include <cmsis_gcc.h>
+#include "security_cnt.h"
 
 struct arm_vector_table {
     uint32_t msp;
@@ -72,16 +73,23 @@ int main(void)
         }
     }
 
+    serial_transmit("Starting boot go...\n"); //TODO AR: remove
     rc = boot_go(&rsp);
     if (rc != 0) {
+        serial_transmit("No bootable image found!\n");   
         while (1)
         {
-            serial_transmit("No bootable image found!\n");   
         }
     }
 
     flash_area_warn_on_open();
-    serial_transmit("Jumping to the first image slot-- Address at 0x08000000");
+    serial_transmit("Jumping to the first image slot-- Address at app start");
+
+    serial_transmit("TODO AR: remove this!");
+    //while (1)
+    {
+    }
+
     do_boot(&rsp);
 
     while(1)
