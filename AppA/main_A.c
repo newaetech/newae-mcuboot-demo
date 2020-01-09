@@ -23,12 +23,24 @@
 #include <core_cm4.h>
 #include <cmsis_gcc.h>
 
+
+volatile char __attribute__((section(".header"))) image_header[32] = 
+{ 
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+};
+
 void serial_transmit(char *c);
 void serial_read(char *buf, int len);
 
 int main(void)
 {
-
     platform_init();
     init_uart();
     trigger_setup();
@@ -38,12 +50,32 @@ int main(void)
     _delay_ms(20);
     #endif
 
-    serial_transmit("Starting application B...\n"); 
-    uint8_t pin_state = 0;
+    serial_transmit("Starting application A...\n"); 
+    app_loop();
+
+}
+
+volatile void app_loop()
+{
     while(1)
     {
         led_ok(1);
-        led_error(1);
+        led_error(1);       
+
+        const uint16_t repeat_transmit = 200;
+        volatile uint16_t i = 0;
+        for(i = 0; i < repeat_transmit; i++)
+        {
+            serial_transmit("Running A, switching LEDs...\n"); 
+        }
+
+        led_ok(0);
+        led_error(0);
+
+        for(i = 0; i < repeat_transmit; i++)
+        {
+            serial_transmit("Running A, switching LEDs...\n"); 
+        }              
     }
 }
 

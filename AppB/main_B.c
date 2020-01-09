@@ -26,9 +26,20 @@
 void serial_transmit(char *c);
 void serial_read(char *buf, int len);
 
+volatile char __attribute__((section(".header"))) image_header[32] = 
+{ 
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+};
+
 int main(void)
 {
-
     platform_init();
     init_uart();
     trigger_setup();
@@ -39,14 +50,33 @@ int main(void)
     #endif
 
     serial_transmit("Starting application B...\n"); 
-    uint8_t pin_state = 0;
-    while(1)
-    {
-        led_ok(0);
-        led_error(0);
-    }
+    app_loop();
+
 }
 
+volatile void app_loop()
+{
+    while(1)
+    {
+        led_ok(1);
+        led_error(0);       
+
+        const uint16_t repeat_transmit = 200;
+        volatile uint16_t i = 0;
+        for(i = 0; i < repeat_transmit; i++)
+        {
+            serial_transmit("Running B, switching LEDs...\n"); 
+        }
+
+        led_ok(0);
+        led_error(1);
+
+        for(i = 0; i < repeat_transmit; i++)
+        {
+            serial_transmit("Running B, switching LEDs...\n"); 
+        }              
+    }
+}
 void serial_transmit(char *c)
 {
     do
