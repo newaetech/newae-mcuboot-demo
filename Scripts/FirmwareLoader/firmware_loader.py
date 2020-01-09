@@ -31,7 +31,7 @@ target = cw.target(scope)
 
 def main():
     setup()
-    #write_bootloader()
+    write_bootloader()
     time.sleep(1)
     write_app_a()
     time.sleep(1)
@@ -52,12 +52,13 @@ def write_bootloader():
     program_bootloader(scope, prog, fw_path)
     
 def write_app_a():
-    fw_path = r'..\..\AppA\APP_A-CWLITEARM.hex'
+    #fw_path = r'..\..\AppA\APP_A-CWLITEARM.hex'
+    fw_path = r'..\..\AppA\APP_A_SIGNED-CWLITEARM.hex'
     prog = cw.programmers.STM32FProgrammer
     program_bootloader(scope, prog, fw_path)
     
 def write_app_b():
-    fw_path = r'..\..\AppB\APP_B-CWLITEARM.hex'
+    fw_path = r'..\..\AppB\APP_B_SIGNED-CWLITEARM.hex'
     prog = cw.programmers.STM32FProgrammer
     program_bootloader(scope, prog, fw_path)        
 
@@ -82,6 +83,8 @@ def program_bootloader(scope, prog_type, fw_path, **kwargs):
     prog._logging = None
     prog.open()
     prog.find()
+    prog.erase(True, fw_path)
+    #prog.erase()
     prog.program(fw_path, memtype="flash", verify=True)
     prog.close()
 

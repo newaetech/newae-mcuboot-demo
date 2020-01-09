@@ -66,7 +66,8 @@ TLV_VALUES = {
 TLV_SIZE = 4
 TLV_INFO_SIZE = 4
 TLV_INFO_MAGIC = 0x6907
-TLV_PROT_INFO_MAGIC = 0x6908
+#TLV_PROT_INFO_MAGIC = 0x6908 TODO AR: this is the latest version from mcuboot but NOT for tf-m
+TLV_PROT_INFO_MAGIC = 0x6907
 
 boot_magic = bytes([
     0x77, 0xc2, 0x95, 0xf3,
@@ -91,6 +92,7 @@ class TLV():
         self.magic = magic
         self.buf = bytearray()
         self.endian = endian
+        self.size = TLV_SIZE
 
     def __len__(self):
         return TLV_INFO_SIZE + len(self.buf)
@@ -109,6 +111,8 @@ class TLV():
             return bytes()
         e = STRUCT_ENDIAN_DICT[self.endian]
         header = struct.pack(e + 'HH', self.magic, len(self))
+        print("Magic")
+        print(self.magic)
         return header + bytes(self.buf)
 
 
@@ -238,9 +242,11 @@ class Image():
         if dependencies is None:
             dependencies_num = 0
             protected_tlv_size = 0
+            print("no depends!!")
         else:
             # Size of a Dependency TLV = Header ('BBH') + Payload('IBBHI')
             # = 16 Bytes
+            print("yes depends!!")
             dependencies_num = len(dependencies[DEP_IMAGES_KEY])
             protected_tlv_size = (dependencies_num * 16) + TLV_INFO_SIZE
 
@@ -327,7 +333,8 @@ class Image():
 
     def add_header(self, enckey, protected_tlv_size):
         """Install the image header."""
-
+        print("Look here!")
+        print(protected_tlv_size)
         flags = 0
         if enckey is not None:
             flags |= IMAGE_F['ENCRYPTED']

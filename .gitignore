@@ -32,3 +32,8 @@
 objdir
 /ozone_project.jdebug
 /*.user
+/Scripts/imgtool_tfm/imgtool_lib/__pycache__/*.pyc
+/AppA/.dep/*.d
+/Scripts/FirmwareLoader/__pycache__/*.pyc
+*.pyc
+/AppA/APP_A_SIGNED-CWLITEARM.hex
