@@ -259,7 +259,7 @@ volatile uint32_t debug_bytes_wrote = 0;
 volatile FLASH_TypeDef debug_flash;
 volatile uint32_t sample_read = 0;
 
-static int32_t ARM_Flash_ProgramData(uint32_t addr, const void *data,
+static volatile int32_t ARM_Flash_ProgramData(uint32_t addr, const void *data,
                                      uint32_t cnt)
 {
     char str[64];
@@ -274,12 +274,6 @@ static int32_t ARM_Flash_ProgramData(uint32_t addr, const void *data,
     {
         return ARM_DRIVER_OK; //TODO AR: remove debug code
     }
-
-    if(cnt % 2 != 0)
-    {
-        cnt++;
-    }
-
 
     serial_transmit("Starting programming...\n");
     debug_addr = addr;
@@ -304,26 +298,29 @@ static int32_t ARM_Flash_ProgramData(uint32_t addr, const void *data,
 
     uint32_t end_address = addr + cnt;
 
-    sprintf(str, "Start Addr: %x, End Addr: %x Cnt: %x \n", addr, end_address, cnt);
+    sprintf(str, "Start Addr: %x, End Addr: %x Cnt: %u \n", addr, end_address, cnt);
     serial_transmit(str); 
+    uint32_t size_of_base_unit = sizeof(uint32_t);
+    uint32_t* elem_ptr = (uint32_t*)data;
 
-    for(bytes_wrote = 0; bytes_wrote < cnt; bytes_wrote+=2)
+    static uint32_t write_count = 0;
+
+    for(volatile uint32_t elem_cnt = 0; elem_cnt < cnt/4; elem_cnt++)
     {
-        /*The smallest data size that this can write is a half word (16 bits)*/
-        //TODO AR: remove debug code 
-        //sprintf(str, "Just wrote at: Addr: %x, Bytes Wrote: %x At Address: %x \n", addr, bytes_wrote, addr + bytes_wrote);
-        //serial_transmit(str);
-        HAL_FLASH_Program(1, addr + bytes_wrote, (uint16_t)(&data + bytes_wrote));
+        volatile uint32_t word = *(elem_ptr + elem_cnt);
+        volatile uint32_t address = (uint32_t)(addr + (elem_cnt * size_of_base_unit));
 
-        //memcpy(&sample_read, addr + bytes_wrote, sizeof(uint16_t));
-        
-        //memcpy(&debug_flash, FLASH, sizeof(FLASH_TypeDef));
-        //debug_bytes_wrote = bytes_wrote;
+        sprintf(str, "Wrote word: %x at Addr: %x Element Count: %u \n", word, address, elem_cnt);
+        serial_transmit(str); 
+        MemMap_Flash_WriteWord(address, word);
+        write_count++;
     }
 
     flash_lock();
     
     serial_transmit("End of programming...\n");
+    sprintf(str, "Write count: %u, \n", write_count);
+    serial_transmit(str); 
     return ARM_DRIVER_OK;
 }
 
@@ -395,14 +392,23 @@ static inline void flash_lock(void)
 static int32_t ARM_Flash_EraseSector(uint32_t addr)
 {
     uint32_t rc = 0;
+    char str[64];
 
     rc  = is_range_valid(FLASH0_DEV, addr);
     rc |= is_sector_aligned(FLASH0_DEV, addr);
     if (rc != 0) {
+        sprintf(str, "Failed to erase page at: Addr: %x \n", addr);
+        serial_transmit(str);
         return ARM_DRIVER_ERROR_PARAMETER;
     }
-    
+
+    flash_unlock();
     FLASH_PageErase(addr);
+    flash_lock();
+
+    sprintf(str, "Just erased page at: Addr: %x \n", addr);
+    serial_transmit(str);
+    
     return ARM_DRIVER_OK;
 }
 

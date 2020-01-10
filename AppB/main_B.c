@@ -26,6 +26,7 @@
 void serial_transmit(char *c);
 void serial_read(char *buf, int len);
 
+
 volatile char __attribute__((section(".header"))) image_header[32] = 
 { 
     0x00, 0x00, 0x00, 0x00,

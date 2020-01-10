@@ -42,6 +42,10 @@ struct arm_vector_table {
 static void do_boot(struct boot_rsp *rsp);
 void jump_to_app();
 
+//TODO AR: remove debug proto
+static uint32_t
+flash_read_word(uint32_t address);
+
 /* Flash device name must be specified by target */
 extern ARM_DRIVER_FLASH FLASH_DEV_NAME;
 
@@ -52,11 +56,36 @@ int main(void)
     init_uart();
     trigger_setup();
 
+    //TODO AR: remove test code (this is useful for testing flash operations)
+
+/*
+    FLASH_DEV_NAME.EraseSector(FLASH_AREA_0_OFFSET);
+
+    volatile uint8_t data[] = {1u, 0x56u, 3u,
+                              1u, 0x89u, 3u,
+                              1u, 0x98, 3u,
+                              1u, 0x78, 3u,
+                              1u, 0x65, 3u, 0x7};
+
+    FLASH_DEV_NAME.ProgramData(FLASH_AREA_0_OFFSET, &data, sizeof(data));
+
+    serial_transmit("Reading App A (Untouched)\n");
+    serial_memory_dump(FLASH_AREA_0_OFFSET, 100);
+
+    serial_transmit("Reading App B (Untouched)\n");
+    serial_memory_dump(FLASH_AREA_2_OFFSET, 100);
+
+    while(1){;}    
+*/
+
+
+
+
+
     //This is needed on XMEGA examples, but not normally on ARM. ARM doesn't have this macro normally anyway.
     #ifdef __AVR__
     _delay_ms(20);
     #endif
-
 
     /* Start of bl2_main calls */
 
@@ -75,12 +104,15 @@ int main(void)
 
     serial_transmit("Starting boot go...\n"); //TODO AR: remove
     rc = boot_go(&rsp);
+    serial_transmit("End of boot go \n");
     if (rc != 0) {
         serial_transmit("No bootable image found!\n");   
         while (1)
         {
         }
     }
+
+    jump_to_application(); //TODO AR: remove debug 
 
     flash_area_warn_on_open();
     serial_transmit("Jumping to the first image slot-- Address at app start");
@@ -219,4 +251,27 @@ __attribute__((naked)) void boot_clear_bl2_ram_area(void)
         "bx      lr                                  \n"
          : : : "r0" , "r1" , "r2" , "memory"
     );
+}
+
+
+void serial_memory_dump(uint32_t start_addr, uint32_t count)
+{
+    uint32_t sizeOfUint32 = sizeof(uint32_t);
+    char str[64];
+
+    for(volatile uint32_t address = start_addr; address < (start_addr+count); address+=4)
+    {
+        volatile uint32_t word = flash_read_word(address);
+        sprintf(str, "%x, %x", address, word);
+        serial_transmit(str);
+        sprintf(str, "\n");
+        serial_transmit(str);
+    }
+}
+
+//TODO AR: remove this
+static uint32_t
+flash_read_word(uint32_t address)
+{
+	return *(uint32_t*)address;
 }

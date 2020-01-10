@@ -242,6 +242,9 @@ bool boot_add_uint16_overflow_check(uint16_t a, uint16_t b);
 /* These are macros so they can be used as lvalues. */
 #define BOOT_IMG(state, slot) ((state)->imgs[current_image][(slot)])
 #define BOOT_IMG_AREA(state, slot) (BOOT_IMG(state, slot).area)
+//TODO AR: This is negated in some places and not in others, in juul's version they don't use it at all.
+//In tf-m they expect hdr_valid to be 1 but check the negated version of it
+//To maintain compatibility with loader.c this is changed here.
 #define BOOT_IMG_HDR_IS_VALID(state, slot) (BOOT_IMG(state, slot).is_hdr_valid)
 #define BOOT_SCRATCH_AREA(state) ((state)->scratch.area)
 #define BOOT_WRITE_SZ(state) ((state)->write_sz)

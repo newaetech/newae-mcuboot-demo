@@ -385,7 +385,9 @@ boot_validate_slot(int slot, struct boot_status *bs)
         goto out;
     }
 
-    if ((!BOOT_IMG_HDR_IS_VALID(&boot_data, slot)) ||
+//TODO AR: original line     if ((!BOOT_IMG_HDR_IS_VALID(&boot_data, slot)) ||
+//Why is it negated? is_hdr_valid is 1 
+    if (!(BOOT_IMG_HDR_IS_VALID(&boot_data, slot)) ||
          (boot_image_check(hdr, fap, bs) != 0)) {
         if (slot != BOOT_PRIMARY_SLOT) {
             rc = flash_area_erase(fap, 0, fap->fa_size);
@@ -409,7 +411,10 @@ boot_validate_slot(int slot, struct boot_status *bs)
 
 out:
     flash_area_close(fap);
-    return rc;
+
+    //TODO AR: remove debug code
+    return 0;
+    return rc; //original
 }
 
 /**
@@ -453,6 +458,8 @@ done:
     flash_area_close(fap);
     boot_transmit_error_code_serial(29, debug_fail);
         boot_transmit_error_code_serial(29, rc);
+    //TODO AR: remove debug code
+    return 0;
     return rc;
 }
 
@@ -986,12 +993,13 @@ boot_copy_sector(const struct flash_area *fap_src,
     int chunk_sz;
     int rc;
 
-    static uint8_t buf[1024];
+//TODO AR: remove debug code     static uint8_t buf[1024];
+    static uint32_t buf[1024];
 
     bytes_copied = 0;
     while (bytes_copied < sz) {
-        if (sz - bytes_copied > sizeof(buf)) {
-            chunk_sz = sizeof(buf);
+        if (sz - bytes_copied > 1024){//sizeof(buf)) {
+            chunk_sz =1024; //sizeof(buf);
         } else {
             chunk_sz = sz - bytes_copied;
         }
@@ -2223,6 +2231,7 @@ boot_go(struct boot_rsp *rsp)
                                    BOOT_IMG_AREA(&boot_data, BOOT_PRIMARY_SLOT)
                                   );
 #endif
+        rc = 0;//TODO AR: remove debug code
         if (rc) {
             BOOT_LOG_ERR("Failed to add Image %u data to shared area",
                          current_image);

@@ -242,13 +242,12 @@ int flash_area_erase(const struct flash_area *area, uint32_t off, uint32_t len)
     /*AR: This should be all that's needed for actually erasing flash page */
     uint32_t address_to_erase = area->fa_off + off; 
 
-    FLASH_PageErase(off);
-
     ARM_FLASH_INFO *flash_info;
     uint32_t deleted_len = 0;
     int32_t rc = 0;
 
     BOOT_LOG_DBG("erase area=%d, off=%#x, len=%#x", area->fa_id, off, len);
+    boot_transmit_error_code_serial(201, address_to_erase);
     flash_info = FLASH_DEV_NAME.GetInfo();
 
     if (flash_info->sector_info == NULL) {
