@@ -40,7 +40,7 @@ struct arm_vector_table {
  * Prototypes
  * */
 static void do_boot(struct boot_rsp *rsp);
-void jump_to_app();
+volatile void jump_to_application();
 
 //TODO AR: remove debug proto
 static uint32_t
@@ -78,17 +78,13 @@ int main(void)
     while(1){;}    
 */
 
-
-
-
-
     //This is needed on XMEGA examples, but not normally on ARM. ARM doesn't have this macro normally anyway.
     #ifdef __AVR__
     _delay_ms(20);
-    #endif
+    #endif 
 
     /* Start of bl2_main calls */
-
+    
     serial_transmit("Starting bootloader...\n"); 
 
     struct boot_rsp rsp;

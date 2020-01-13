@@ -270,11 +270,6 @@ static volatile int32_t ARM_Flash_ProgramData(uint32_t addr, const void *data,
         break_here++;
     }
 
-    if(cnt == 1)
-    {
-        return ARM_DRIVER_OK; //TODO AR: remove debug code
-    }
-
     serial_transmit("Starting programming...\n");
     debug_addr = addr;
     debug_cnt = cnt;
@@ -310,9 +305,14 @@ static volatile int32_t ARM_Flash_ProgramData(uint32_t addr, const void *data,
         volatile uint32_t word = *(elem_ptr + elem_cnt);
         volatile uint32_t address = (uint32_t)(addr + (elem_cnt * size_of_base_unit));
 
-        sprintf(str, "Wrote word: %x at Addr: %x Element Count: %u \n", word, address, elem_cnt);
+        sprintf(str, "Wrote with word: %x at Addr: %x Element Count: %u \n", word, address, elem_cnt);
         serial_transmit(str); 
-        MemMap_Flash_WriteWord(address, word);
+
+        if(MemMap_Flash_WriteWord(address, word) == -1)
+        {
+            sprintf(str, "!!Wrote failed with word: %x at Addr: %x Element Count: %u \n", word, address, elem_cnt);
+            serial_transmit(str); 
+        };
         write_count++;
     }
 
@@ -324,7 +324,7 @@ static volatile int32_t ARM_Flash_ProgramData(uint32_t addr, const void *data,
     return ARM_DRIVER_OK;
 }
 
-#define FLASH_TIMEOUT (1000)
+#define FLASH_TIMEOUT (2000)
 static int8_t
 MemMap_Flash_WriteWord(uint32_t address, uint32_t word)
 {
@@ -342,7 +342,7 @@ MemMap_Flash_WriteWord(uint32_t address, uint32_t word)
 
 	*(__IO uint16_t*)address = (uint16_t)word;
 
-	timeout = 1000;
+	timeout = FLASH_TIMEOUT;
 	while(FLASH->SR & FLASH_SR_BSY)
 	{
 		if(--timeout == 0)

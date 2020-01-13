@@ -993,13 +993,12 @@ boot_copy_sector(const struct flash_area *fap_src,
     int chunk_sz;
     int rc;
 
-//TODO AR: remove debug code     static uint8_t buf[1024];
-    static uint32_t buf[1024];
+    static uint8_t buf[1024];
 
     bytes_copied = 0;
     while (bytes_copied < sz) {
-        if (sz - bytes_copied > 1024){//sizeof(buf)) {
-            chunk_sz =1024; //sizeof(buf);
+        if (sz - bytes_copied > sizeof(buf)) {
+            chunk_sz = sizeof(buf);
         } else {
             chunk_sz = sz - bytes_copied;
         }
