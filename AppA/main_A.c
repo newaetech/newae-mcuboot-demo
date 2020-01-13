@@ -23,6 +23,8 @@
 #include <core_cm4.h>
 #include <cmsis_gcc.h>
 
+void serial_transmit(char *c);
+void serial_read(char *buf, int len);
 
 volatile char __attribute__((section(".header"))) image_header[32] = 
 { 
@@ -36,9 +38,6 @@ volatile char __attribute__((section(".header"))) image_header[32] =
     0x00, 0x00, 0x00, 0x00,
 };
 
-void serial_transmit(char *c);
-void serial_read(char *buf, int len);
-
 int main(void)
 {
     platform_init();
@@ -51,30 +50,47 @@ int main(void)
     #endif
 
     serial_transmit("Starting application A...\n"); 
-    app_loop();
+    app_loop_a();
 
 }
 
-volatile void app_loop()
+volatile void app_loop_a()
 {
+    uint8_t led_ok_state = 0;
+    uint8_t led_error_state = 0;
+
+    uint8_t counter = 255;
+
+    char str[64];
+
     while(1)
     {
-        led_ok(1);
-        led_error(1);       
+        led_ok_state = 0;
+        led_error_state = 0;
 
-        const uint16_t repeat_transmit = 200;
+        led_ok(led_ok_state);
+        led_error(led_error_state);       
+
+        counter--;
+
+        const uint16_t repeat_transmit = 10;
         volatile uint16_t i = 0;
         for(i = 0; i < repeat_transmit; i++)
         {
-            serial_transmit("Running A, switching LEDs...\n"); 
+            sprintf(str, "Running A, switching led_ok: %x, led_err: %x Counter : %x \n", led_ok_state, led_error_state, counter);
+            serial_transmit(str);
         }
 
-        led_ok(0);
-        led_error(0);
+        led_ok_state = 1;
+        led_error_state = 1;
+
+        led_ok(led_ok_state);
+        led_error(led_error_state);      
 
         for(i = 0; i < repeat_transmit; i++)
         {
-            serial_transmit("Running A, switching LEDs...\n"); 
+            sprintf(str, "Running A, switching led_ok: %x, led_err: %x Counter : %x \n", led_ok_state, led_error_state, counter);
+            serial_transmit(str);
         }              
     }
 }
