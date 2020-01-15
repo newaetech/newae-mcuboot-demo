@@ -30,11 +30,13 @@
 #include <string.h>
 #include <stdint.h>
 #include "RTE_Device.h"
-#include "stm32f3xx_hal_flash.h"
 #include "Driver_Flash.h"
 #include "flash_layout.h"
+#include "stm32f3xx_hal_def.h"
 #include "stm32f3xx_hal_flash_ex.h"
+#include "stm32f3xx_hal_flash.h"
 #include "serial_abstract.h"
+#include "bootutil_priv.h"
 
 typedef unsigned long uint32_t;
 typedef long int32_t;
@@ -110,21 +112,20 @@ static const ARM_FLASH_CAPABILITIES DriverCapabilities = {
 /*Prototypes*/
 static int32_t ARM_Flash_EraseSector(uint32_t addr);
 
-volatile uint32_t debug_offset = 0;
-volatile uint32_t debug_flash_min = 0;
-volatile uint32_t debug_flash_max = 0;
-
-volatile uint32_t debug_flash_base = 0;
-
-//TODO AR: flash_dev could hold ranges to make some of this more generic
 static int32_t is_range_valid(struct arm_flash_dev_t *flash_dev,
                               uint32_t offset)
 {
-    debug_offset = offset;
-    debug_flash_base = FLASH0_BASE_S;
 
     uint32_t flash_limit = 0;
     volatile int32_t rc = 0;
+
+        //TODO AR: remove debug code
+    if(offset ==  3803668564)
+    {
+            serial_transmit("stuck!");
+        while(1){;}
+    }
+
 
     if (offset >= FLASH0_BASE_S && offset <= FLASH_REGION_1_MAX) 
     {
@@ -135,11 +136,7 @@ static int32_t is_range_valid(struct arm_flash_dev_t *flash_dev,
         boot_transmit_error_code_serial(100,offset);  
         rc = -1;
     }
-    
 
-    debug_offset = offset;
-    debug_flash_min = FLASH0_BASE_S;
-    debug_flash_max = FLASH_REGION_1_MAX;
 
     return rc;
 }
@@ -236,10 +233,15 @@ static int32_t ARM_Flash_ReadData(uint32_t addr, void *data, uint32_t cnt)
 {
     debug_read_addr = addr;
     debug_read_cnt = cnt;
+
     //uint32_t start_addr = FLASH0_DEV->memory_base + addr;
     uint32_t start_addr = addr;
 
     int32_t rc = 0;
+
+    char test[64];
+    sprintf(test, "Read at address: %x Cnt: %x \n", addr, cnt);
+    serial_transmit(test);
 
     /* Check flash memory boundaries */
     rc = is_range_valid(FLASH0_DEV, addr + cnt);
@@ -253,26 +255,12 @@ static int32_t ARM_Flash_ReadData(uint32_t addr, void *data, uint32_t cnt)
     return ARM_DRIVER_OK;
 }
 
-volatile uint32_t debug_cnt = 0;
-volatile uint32_t debug_addr = 0;
-volatile uint32_t debug_bytes_wrote = 0;
-volatile FLASH_TypeDef debug_flash;
-volatile uint32_t sample_read = 0;
-
 static volatile int32_t ARM_Flash_ProgramData(uint32_t addr, const void *data,
                                      uint32_t cnt)
 {
-    char str[64];
-
-    if(addr == FLASH_AREA_2_OFFSET)
-    {
-        volatile uint16_t break_here = 0;
-        break_here++;
-    }
-
-    serial_transmit("Starting programming...\n");
-    debug_addr = addr;
-    debug_cnt = cnt;
+    char test[64];
+    sprintf(test, "Programmed address: %x Cnt: %x", addr, cnt);
+    serial_transmit(test);
 
     volatile uint32_t mem_base = FLASH0_DEV->memory_base;
     int32_t rc = 0;
@@ -285,16 +273,11 @@ static volatile int32_t ARM_Flash_ProgramData(uint32_t addr, const void *data,
     if (rc != 0) {
         return ARM_DRIVER_ERROR_PARAMETER;
     }
-    debug_bytes_wrote = 0;
-    //cnt is times by two as it is in bytes and HAL_Flash_Program writes two bytes
-    volatile uint32_t bytes_wrote = 0;
 
     flash_unlock();
 
     uint32_t end_address = addr + cnt;
 
-    sprintf(str, "Start Addr: %x, End Addr: %x Cnt: %u \n", addr, end_address, cnt);
-    serial_transmit(str); 
     uint32_t size_of_base_unit = sizeof(uint32_t);
     uint32_t* elem_ptr = (uint32_t*)data;
 
@@ -305,68 +288,21 @@ static volatile int32_t ARM_Flash_ProgramData(uint32_t addr, const void *data,
         volatile uint32_t word = *(elem_ptr + elem_cnt);
         volatile uint32_t address = (uint32_t)(addr + (elem_cnt * size_of_base_unit));
 
-        sprintf(str, "Wrote with word: %x at Addr: %x Element Count: %u \n", word, address, elem_cnt);
-        serial_transmit(str); 
-
-        if(MemMap_Flash_WriteWord(address, word) == -1)
+        if(HAL_FLASH_Write_Word(address, word) == HAL_ERROR)
         {
-            sprintf(str, "!!Wrote failed with word: %x at Addr: %x Element Count: %u \n", word, address, elem_cnt);
-            serial_transmit(str); 
+            return ARM_DRIVER_ERROR_TIMEOUT;
         };
         write_count++;
     }
 
+    char str[64];
+    sprintf(str, "Write count: %u", write_count);    
+
     flash_lock();
-    
-    serial_transmit("End of programming...\n");
-    sprintf(str, "Write count: %u, \n", write_count);
-    serial_transmit(str); 
+ 
     return ARM_DRIVER_OK;
 }
 
-#define FLASH_TIMEOUT (2000)
-static int8_t
-MemMap_Flash_WriteWord(uint32_t address, uint32_t word)
-{
-	uint32_t timeout = FLASH_TIMEOUT;
-
-	while(FLASH->SR & FLASH_SR_BSY)
-	{
-		if(--timeout == 0)
-		{
-			return -1;
-		}
-	}
-
-	FLASH->CR |= FLASH_CR_PG;
-
-	*(__IO uint16_t*)address = (uint16_t)word;
-
-	timeout = FLASH_TIMEOUT;
-	while(FLASH->SR & FLASH_SR_BSY)
-	{
-		if(--timeout == 0)
-		{
-			return -1;
-		}
-	}
-
-	address += 2;
-	*(__IO uint16_t*)address = (uint16_t)(word >> 16);
-
-	timeout = FLASH_TIMEOUT;
-	while(FLASH->SR & FLASH_SR_BSY)
-	{
-		if(--timeout == 0)
-		{
-			return -1;
-		}
-	}
-
-	FLASH->CR &= ~FLASH_CR_PG;
-
-	return 1;
-}
 
 #define FLASH_UNLOCK_KEY1	0x45670123
 #define	FLASH_UNLOCK_KEY2	0xCDEF89AB

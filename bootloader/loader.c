@@ -159,10 +159,16 @@ static const struct boot_status_table boot_status_tables[] = {
  * \retval 0
  * \retval BOOT_EBADIMAGE
  */
-static int
+
+//TODO AR: this was static, remove debug hdr
+
+volatile struct image_header debug_image_header;
+int
 boot_verify_image_header(struct image_header *hdr)
 {
     uint32_t image_end;
+
+    memcpy(&debug_image_header, hdr, sizeof(hdr));
 
     if (hdr->ih_magic != IMAGE_MAGIC) {
         
@@ -200,7 +206,12 @@ boot_verify_image_header(struct image_header *hdr)
     return 0;
 }
 
-static int
+//TODO AR: this was static and remove debug variables 
+
+volatile struct image_header debug_out_hdr;
+volatile struct flash_area debug_out_fap;
+
+int
 boot_read_image_header(int slot, struct image_header *out_hdr)
 {
     const struct flash_area *fap = NULL;
@@ -216,6 +227,7 @@ boot_read_image_header(int slot, struct image_header *out_hdr)
     }
 
     rc = flash_area_read(fap, 0, out_hdr, sizeof(*out_hdr));
+
     if (rc != 0) {
         rc = BOOT_EFLASH;
         boot_transmit_error_code_serial(102, rc);
@@ -223,6 +235,17 @@ boot_read_image_header(int slot, struct image_header *out_hdr)
     }
 
     rc = boot_verify_image_header(out_hdr);
+
+    if(rc != 0u)
+    {
+        boot_transmit_error_code_serial(1064, slot);
+        boot_transmit_error_code_serial(1065, fap->fa_off);
+    }
+    boot_transmit_error_code_serial(101, rc);
+
+    memcpy(&debug_out_hdr, out_hdr, sizeof(debug_out_hdr));
+    memcpy(&debug_out_fap, fap, sizeof(debug_out_fap));
+
     BOOT_IMG_HDR_IS_VALID(&boot_data, slot) = (rc == 0);
 
 done:
@@ -306,10 +329,11 @@ boot_read_sectors(void)
     return 0;
 }
 
+//TODO AR: this was static 
 /**
  * Validate image hash/signature and security counter in a slot.
  */
-static int
+int
 boot_image_check(struct image_header *hdr, const struct flash_area *fap,
                  struct boot_status *bs)
 {
@@ -365,7 +389,10 @@ boot_check_header_erased(int slot)
     return 0;
 }
 
-static int
+volatile uint32_t debug_hdr_valid = 0;
+volatile uint32_t debug_image_check= 0;
+//TODO AR: this was static
+int
 boot_validate_slot(int slot, struct boot_status *bs)
 {
     const struct flash_area *fap;
@@ -385,8 +412,9 @@ boot_validate_slot(int slot, struct boot_status *bs)
         goto out;
     }
 
-//TODO AR: original line     if ((!BOOT_IMG_HDR_IS_VALID(&boot_data, slot)) ||
-//Why is it negated? is_hdr_valid is 1 
+    debug_hdr_valid = !(BOOT_IMG_HDR_IS_VALID(&boot_data, slot));
+    debug_image_check = boot_image_check(hdr, fap, bs);
+
     if (!(BOOT_IMG_HDR_IS_VALID(&boot_data, slot)) ||
          (boot_image_check(hdr, fap, bs) != 0)) {
         if (slot != BOOT_PRIMARY_SLOT) {
@@ -412,10 +440,10 @@ boot_validate_slot(int slot, struct boot_status *bs)
 out:
     flash_area_close(fap);
 
-    //TODO AR: remove debug code
-    return 0;
     return rc; //original
 }
+
+    uint32_t debug_img_security_cnt;
 
 /**
  * Updates the stored security counter value with the image's security counter
@@ -444,7 +472,7 @@ boot_update_security_counter(int slot, struct image_header *hdr)
 
     rc = bootutil_get_img_security_cnt(hdr, fap, &img_security_cnt);
     if (rc != 0) {
-                debug_fail = 2;
+                debug_fail = rc;
         goto done;
     }
 
@@ -459,7 +487,7 @@ done:
     boot_transmit_error_code_serial(29, debug_fail);
         boot_transmit_error_code_serial(29, rc);
     //TODO AR: remove debug code
-    return 0;
+    //return 0;
     return rc;
 }
 
@@ -1799,7 +1827,7 @@ boot_perform_update(struct boot_status *bs)
         if (rc != 0) {
             BOOT_LOG_ERR("Security counter update failed after "
                          "image upgrade.");
-            boot_transmit_error_code_serial(10, bs->idx);               
+            boot_transmit_error_code_serial(10, rc);               
             BOOT_SWAP_TYPE(&boot_data) = BOOT_SWAP_TYPE_PANIC;
         }
     }
@@ -2186,8 +2214,7 @@ boot_go(struct boot_rsp *rsp)
          * the magic number on the image is OK.
          */
         //TODO: this was the original line and it fails. Why is it negated? hdr valid is true, can't find in mcuboot either
-        //if (!BOOT_IMG_HDR_IS_VALID(&boot_data, slot)) {
-        if (BOOT_IMG_HDR_IS_VALID(&boot_data, slot)) {
+        if (!BOOT_IMG_HDR_IS_VALID(&boot_data, slot)) {
             BOOT_LOG_ERR("Invalid image header Image=%u", current_image);
             boot_transmit_error_code_serial(13,slot);  
             rc = BOOT_EBADIMAGE;
@@ -2208,7 +2235,6 @@ boot_go(struct boot_rsp *rsp)
         if (BOOT_SWAP_TYPE(&boot_data) == BOOT_SWAP_TYPE_NONE) {
             rc = boot_update_security_counter(BOOT_PRIMARY_SLOT,
                                   boot_img_hdr(&boot_data, BOOT_PRIMARY_SLOT));
-            //TODO AR: this is failing, why? Scratch space might not be big enough...if (rc != 0) {
             if (rc != 0) {
                 BOOT_LOG_ERR("Security counter update failed after image "
                              "validation.");
@@ -2230,7 +2256,7 @@ boot_go(struct boot_rsp *rsp)
                                    BOOT_IMG_AREA(&boot_data, BOOT_PRIMARY_SLOT)
                                   );
 #endif
-        rc = 0;//TODO AR: remove debug code
+        //TODO this was working with this here.....rc = 0;//TODO AR: remove debug code
         if (rc) {
             BOOT_LOG_ERR("Failed to add Image %u data to shared area",
                          current_image);

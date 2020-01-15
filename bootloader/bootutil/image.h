@@ -27,6 +27,7 @@
 #ifndef H_IMAGE_
 #define H_IMAGE_
 
+#include <stdbool.h>
 #include <inttypes.h>
 
 #ifdef __cplusplus
@@ -39,6 +40,7 @@ struct flash_area;
 #define IMAGE_MAGIC_V1              0x96f3b83c
 #define IMAGE_MAGIC_NONE            0xffffffff
 #define IMAGE_TLV_INFO_MAGIC        0x6907
+#define IMAGE_TLV_PROT_INFO_MAGIC   0x6908
 
 #define IMAGE_HEADER_SIZE           32
 
@@ -73,6 +75,7 @@ struct flash_area;
 //#define IMAGE_TLV_SEC_CNT           0x50   /* security counter */
 #define IMAGE_TLV_SEC_CNT           0x40   /* TODO AR: this is a hack required for image validate security counter */
 #define IMAGE_TLV_BOOT_RECORD       0x60   /* measured boot record */
+#define IMAGE_TLV_ANY               0xff   /* Used to iterate over all TLV (not originally part*/
 
 #define IMAGE_VER_MAJOR_LENGTH      8
 #define IMAGE_VER_MINOR_LENGTH      8
@@ -108,6 +111,18 @@ struct image_header {
     uint32_t _pad1;
 };
 
+//AR Note: This was imported from juul
+struct image_tlv_iter {
+    const struct image_header *hdr;
+    const struct flash_area *fap;
+    uint8_t type;
+    bool prot;
+    uint32_t prot_end;
+    uint32_t tlv_off;
+    uint32_t tlv_end;
+};
+
+
 /** Image TLV header.  All fields in little endian. */
 struct image_tlv_info {
     uint16_t it_magic;
@@ -124,7 +139,12 @@ struct image_tlv {
 _Static_assert(sizeof(struct image_header) == IMAGE_HEADER_SIZE,
                "struct image_header not required size");
 
-int bootutil_img_validate(struct image_header *hdr,
+int bootutil_tlv_iter_begin(struct image_tlv_iter *it,
+                            const struct image_header *hdr,
+                            const struct flash_area *fap, uint8_t type,
+                            bool prot);
+
+volatile int bootutil_img_validate(struct image_header *hdr,
                           const struct flash_area *fap,
                           uint8_t *tmp_buf, uint32_t tmp_buf_sz,
                           uint8_t *seed, int seed_len, uint8_t *out_hash);

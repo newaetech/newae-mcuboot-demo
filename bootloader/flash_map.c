@@ -119,6 +119,10 @@ int flash_device_base(uint8_t fd_id, uintptr_t *ret)
     return 0;
 }
 
+volatile uint32_t debug_id = 0;
+volatile uint32_t debug_i = 0;
+volatile uint32_t debug_array_sz = 0;
+
 /*
  * `open` a flash area.  The `area` in this case is not the individual
  * sectors, but describes the particular flash area in question.
@@ -138,10 +142,11 @@ int flash_area_open(uint8_t id, const struct flash_area **area)
         return -1;
     }
 
+    debug_i = i;
+    debug_id = id;
+    debug_array_sz= ARRAY_SIZE(part_map);
     *area = &part_map[i].area;
     part_map[i].ref_count++;
-
-
 
     return 0;
 }

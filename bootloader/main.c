@@ -83,8 +83,10 @@ int main(void)
     _delay_ms(20);
     #endif 
 
+    //while(1){;}
+
     /* Start of bl2_main calls */
-    
+
     serial_transmit("Starting bootloader...\n"); 
 
     struct boot_rsp rsp;

@@ -246,6 +246,7 @@ bool boot_add_uint16_overflow_check(uint16_t a, uint16_t b);
 #define BOOT_SCRATCH_AREA(state) ((state)->scratch.area)
 #define BOOT_WRITE_SZ(state) ((state)->write_sz)
 #define BOOT_SWAP_TYPE(state) ((state)->swap_type[current_image])
+#define BOOT_TLV_OFF(hdr) ((hdr)->ih_hdr_size + (hdr)->ih_img_size) //NOTE AR: Imported from juul
 
 static inline struct image_header*
 boot_img_hdr(struct boot_loader_state *state, size_t slot)
