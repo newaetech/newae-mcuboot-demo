@@ -92,7 +92,6 @@ class TLV():
         self.magic = magic
         self.buf = bytearray()
         self.endian = endian
-        self.size = TLV_SIZE
 
     def __len__(self):
         return TLV_INFO_SIZE + len(self.buf)

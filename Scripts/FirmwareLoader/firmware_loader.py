@@ -31,7 +31,7 @@ target = cw.target(scope)
 
 def main():
     setup()
-    write_bootloader()
+    #write_bootloader()
     time.sleep(1)
     write_app_a()
     time.sleep(1)
