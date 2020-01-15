@@ -212,7 +212,6 @@ boot_read_image_header(int slot, struct image_header *out_hdr)
     rc = flash_area_open(area_id, &fap);
     if (rc != 0) {
         rc = BOOT_EFLASH;
-        boot_transmit_error_code_serial(101, rc);
         goto done;
     }
 
@@ -231,8 +230,6 @@ boot_read_image_header(int slot, struct image_header *out_hdr)
         boot_transmit_error_code_serial(1064, slot);
         boot_transmit_error_code_serial(1065, fap->fa_off);
     }
-    boot_transmit_error_code_serial(101, rc);
-
     BOOT_IMG_HDR_IS_VALID(&boot_data, slot) = (rc == 0);
 
 done:
@@ -2178,7 +2175,6 @@ boot_go(struct boot_rsp *rsp)
          * onto an empty flash chip. At least do a basic sanity check that
          * the magic number on the image is OK.
          */
-        //TODO: this was the original line and it fails. Why is it negated? hdr valid is true, can't find in mcuboot either
         if (!BOOT_IMG_HDR_IS_VALID(&boot_data, slot)) {
             BOOT_LOG_ERR("Invalid image header Image=%u", current_image);
             boot_transmit_error_code_serial(13,slot);  
@@ -2224,7 +2220,7 @@ boot_go(struct boot_rsp *rsp)
         if (rc) {
             BOOT_LOG_ERR("Failed to add Image %u data to shared area",
                          current_image);
-            boot_transmit_error_code_serial(15,current_image);    
+            boot_transmit_error_code_serial(15,rc);    
         }
     }
 
