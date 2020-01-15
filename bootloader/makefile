@@ -40,7 +40,7 @@ APP_TYPE = APP_MAIN
 # List C source files here.
 # Header files (.h) are automatically pulled in.
 SRC += main.c serial_abstract.c 
-SRC += dummy_nv_counters.c boot_record.c
+SRC += dummy_nv_counters.c boot_record.c tlv.c
 SRC += security_cnt.c loader.c  flash_map.c Driver_Flash.c image_validate.c keys.c image_rsa.c bootutil_misc.c 
 
 #OPT = 3
