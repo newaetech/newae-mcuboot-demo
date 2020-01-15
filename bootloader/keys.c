@@ -26,7 +26,7 @@
 
 #include <bootutil/sign_key.h>
 
- /*Added by AR, TODO: identify if this is the best place for it, duplicated in flash_map*/
+ /*TODO AR: identify if this is the best place for it, duplicated in flash_map*/
 #define MCUBOOT_IMAGE_NUMBER (1)
 #define MCUBOOT_SIGN_RSA
 #define MCUBOOT_SIGN_RSA_LEN (2048)

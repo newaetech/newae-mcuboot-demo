@@ -160,15 +160,10 @@ static const struct boot_status_table boot_status_tables[] = {
  * \retval BOOT_EBADIMAGE
  */
 
-//TODO AR: this was static, remove debug hdr
-
-volatile struct image_header debug_image_header;
-int
+static int
 boot_verify_image_header(struct image_header *hdr)
 {
     uint32_t image_end;
-
-    memcpy(&debug_image_header, hdr, sizeof(hdr));
 
     if (hdr->ih_magic != IMAGE_MAGIC) {
         
@@ -206,12 +201,7 @@ boot_verify_image_header(struct image_header *hdr)
     return 0;
 }
 
-//TODO AR: this was static and remove debug variables 
-
-volatile struct image_header debug_out_hdr;
-volatile struct flash_area debug_out_fap;
-
-int
+static int
 boot_read_image_header(int slot, struct image_header *out_hdr)
 {
     const struct flash_area *fap = NULL;
@@ -242,9 +232,6 @@ boot_read_image_header(int slot, struct image_header *out_hdr)
         boot_transmit_error_code_serial(1065, fap->fa_off);
     }
     boot_transmit_error_code_serial(101, rc);
-
-    memcpy(&debug_out_hdr, out_hdr, sizeof(debug_out_hdr));
-    memcpy(&debug_out_fap, fap, sizeof(debug_out_fap));
 
     BOOT_IMG_HDR_IS_VALID(&boot_data, slot) = (rc == 0);
 
@@ -329,11 +316,10 @@ boot_read_sectors(void)
     return 0;
 }
 
-//TODO AR: this was static 
 /**
  * Validate image hash/signature and security counter in a slot.
  */
-int
+static int
 boot_image_check(struct image_header *hdr, const struct flash_area *fap,
                  struct boot_status *bs)
 {
@@ -389,10 +375,7 @@ boot_check_header_erased(int slot)
     return 0;
 }
 
-volatile uint32_t debug_hdr_valid = 0;
-volatile uint32_t debug_image_check= 0;
-//TODO AR: this was static
-int
+static int
 boot_validate_slot(int slot, struct boot_status *bs)
 {
     const struct flash_area *fap;
@@ -411,9 +394,6 @@ boot_validate_slot(int slot, struct boot_status *bs)
         rc = -1;
         goto out;
     }
-
-    debug_hdr_valid = !(BOOT_IMG_HDR_IS_VALID(&boot_data, slot));
-    debug_image_check = boot_image_check(hdr, fap, bs);
 
     if (!(BOOT_IMG_HDR_IS_VALID(&boot_data, slot)) ||
          (boot_image_check(hdr, fap, bs) != 0)) {
@@ -443,8 +423,6 @@ out:
     return rc; //original
 }
 
-    uint32_t debug_img_security_cnt;
-
 /**
  * Updates the stored security counter value with the image's security counter
  * value which resides in the given slot if it's greater than the stored value.
@@ -461,33 +439,27 @@ boot_update_security_counter(int slot, struct image_header *hdr)
     const struct flash_area *fap = NULL;
     uint32_t img_security_cnt;
     int rc = 0;
-    int debug_fail = 0; //TODO AR: remove debug
 
     rc = flash_area_open(flash_area_id_from_image_slot(slot), &fap);
     if (rc != 0) {
         rc = BOOT_EFLASH;
-        debug_fail = 1;
         goto done;
     }
 
     rc = bootutil_get_img_security_cnt(hdr, fap, &img_security_cnt);
     if (rc != 0) {
-                debug_fail = rc;
         goto done;
     }
 
     rc = boot_nv_security_counter_update(current_image, img_security_cnt);
     if (rc != 0) {
-                debug_fail = 3;
         goto done;
     }
 
 done:
     flash_area_close(fap);
-    boot_transmit_error_code_serial(29, debug_fail);
+    boot_transmit_error_code_serial(29, 0xff);
         boot_transmit_error_code_serial(29, rc);
-    //TODO AR: remove debug code
-    //return 0;
     return rc;
 }
 
@@ -1414,7 +1386,7 @@ boot_copy_image(struct boot_status *bs)
  *
  * @return                      0 on success; nonzero on failure.
  */
-int //TODO AR: this was static
+static int
 boot_swap_image(struct boot_status *bs)
 {
     uint32_t sz;
@@ -1786,7 +1758,7 @@ boot_verify_all_image_dependency(void)
  *
  * @return                      0 on success; nonzero on failure.
  */
-int //TODO AR: this was static
+static int 
 boot_perform_update(struct boot_status *bs)
 {
     int rc;
@@ -1955,8 +1927,6 @@ boot_review_image_swap_types(bool aborted_swap)
 }
 #endif
 
-volatile uint32_t debug_swap_type = 0;
-
 /**
  * Prepare image to be updated if required.
  *
@@ -2042,13 +2012,10 @@ boot_prepare_image_for_update(struct boot_status *bs)
             /* There was no partial swap, determine swap type. */
             if (bs->swap_type == BOOT_SWAP_TYPE_NONE) {
                 BOOT_SWAP_TYPE(&boot_data) = boot_validated_swap_type(bs);
-                debug_swap_type = 1;
             } else if (boot_validate_slot(BOOT_SECONDARY_SLOT, bs) != 0) {
                 BOOT_SWAP_TYPE(&boot_data) = BOOT_SWAP_TYPE_FAIL;
-                debug_swap_type = 2;
             } else {
                 BOOT_SWAP_TYPE(&boot_data) = bs->swap_type;
-                debug_swap_type = 3;
             }
 
 #if (BOOT_IMAGE_NUMBER > 1)
@@ -2140,8 +2107,6 @@ boot_go(struct boot_rsp *rsp)
         /* Set the previously determined swap type */
         bs.swap_type = BOOT_SWAP_TYPE(&boot_data);
 
-        //TODO AR: remove debug code, original ((in use)): switch (BOOT_SWAP_TYPE(&boot_data)) {
-        //int debug_switch = BOOT_SWAP_TYPE_REVERT;
         switch (BOOT_SWAP_TYPE(&boot_data)) {
         case BOOT_SWAP_TYPE_NONE:
             break;
@@ -2256,7 +2221,6 @@ boot_go(struct boot_rsp *rsp)
                                    BOOT_IMG_AREA(&boot_data, BOOT_PRIMARY_SLOT)
                                   );
 #endif
-        //TODO this was working with this here.....rc = 0;//TODO AR: remove debug code
         if (rc) {
             BOOT_LOG_ERR("Failed to add Image %u data to shared area",
                          current_image);

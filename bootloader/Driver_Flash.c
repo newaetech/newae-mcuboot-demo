@@ -119,14 +119,6 @@ static int32_t is_range_valid(struct arm_flash_dev_t *flash_dev,
     uint32_t flash_limit = 0;
     volatile int32_t rc = 0;
 
-        //TODO AR: remove debug code
-    if(offset ==  3803668564)
-    {
-            serial_transmit("stuck!");
-        while(1){;}
-    }
-
-
     if (offset >= FLASH0_BASE_S && offset <= FLASH_REGION_1_MAX) 
     {
         rc = 0;

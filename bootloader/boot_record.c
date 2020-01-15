@@ -363,10 +363,6 @@ boot_add_data_to_shared_area(uint8_t        major_type,
     return SHARED_MEMORY_OK;
 }
 
-//TODO AR: remove debug
-
-volatile struct image_header debug_hdr;
-
 /* See in boot_record.h */
 enum boot_status_err_t
 boot_save_boot_status(uint8_t sw_module,
@@ -398,8 +394,6 @@ boot_save_boot_status(uint8_t sw_module,
     return BOOT_STATUS_OK;
 
 #else /* MCUBOOT_INDIVIDUAL_CLAIMS */
-
-    memcpy(&debug_hdr, hdr, sizeof(debug_hdr));
 
     struct image_tlv_info tlv_header;
     struct image_tlv tlv_entry;

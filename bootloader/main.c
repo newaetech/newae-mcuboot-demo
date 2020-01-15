@@ -100,7 +100,6 @@ int main(void)
         }
     }
 
-    serial_transmit("Starting boot go...\n"); //TODO AR: remove
     rc = boot_go(&rsp);
     serial_transmit("End of boot go \n");
     if (rc != 0) {
@@ -110,15 +109,10 @@ int main(void)
         }
     }
 
-    jump_to_application(); //TODO AR: remove debug 
+    jump_to_application(); //TODO AR: is this best here?
 
     flash_area_warn_on_open();
     serial_transmit("Jumping to the first image slot-- Address at app start");
-
-    serial_transmit("TODO AR: remove this!");
-    //while (1)
-    {
-    }
 
     do_boot(&rsp);
 
@@ -267,9 +261,3 @@ void serial_memory_dump(uint32_t start_addr, uint32_t count)
     }
 }
 
-//TODO AR: remove this
-static uint32_t
-flash_read_word(uint32_t address)
-{
-	return *(uint32_t*)address;
-}
