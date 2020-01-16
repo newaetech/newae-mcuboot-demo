@@ -301,7 +301,7 @@ boot_add_data_to_shared_area(uint8_t        major_type,
                              size_t         size,
                              const uint8_t *data)
 {
-    return SHARED_MEMORY_OK; //NOTE AR: This feature is not used in the CA_BL as it's not core to loader.c
+
     struct shared_data_tlv_entry tlv_entry = {0};
     struct tfm_boot_data *boot_data;
     uint8_t *next_tlv;
@@ -313,7 +313,7 @@ boot_add_data_to_shared_area(uint8_t        major_type,
      * shared data area.
      */
     if (shared_memory_init_done == SHARED_MEMORY_UNINITIALZED) {
-        //TODO AR: this crashes it: memset((void *)BOOT_TFM_SHARED_DATA_BASE, 0, BOOT_TFM_SHARED_DATA_SIZE);
+        memset((void *)BOOT_TFM_SHARED_DATA_BASE, 0, BOOT_TFM_SHARED_DATA_SIZE);
         boot_data->header.tlv_magic   = SHARED_DATA_TLV_INFO_MAGIC;
         boot_data->header.tlv_tot_len = SHARED_DATA_HEADER_SIZE;
         shared_memory_init_done = SHARED_MEMORY_INITIALZED;
@@ -330,7 +330,7 @@ boot_add_data_to_shared_area(uint8_t        major_type,
      */
     for (; offset < tlv_end; offset += tlv_entry.tlv_len) {
         /* Create local copy to avoid unaligned access */
-        //memcpy(&tlv_entry, (const void *)offset, SHARED_DATA_ENTRY_HEADER_SIZE);
+        memcpy(&tlv_entry, (const void *)offset, SHARED_DATA_ENTRY_HEADER_SIZE);
         if (GET_MAJOR(tlv_entry.tlv_type) == major_type &&
             GET_MINOR(tlv_entry.tlv_type) == minor_type) {
             return SHARED_MEMORY_OVERWRITE;
@@ -370,6 +370,11 @@ boot_save_boot_status(uint8_t sw_module,
                       const struct image_header *hdr,
                       const struct flash_area *fap)
 {
+
+#ifdef DISABLE_SHARED_SAVE
+    return BOOT_STATUS_OK;
+#endif
+
 #ifdef MCUBOOT_INDIVIDUAL_CLAIMS
     /* This implementation is deprecated and will probably
      * be removed in the future.
@@ -416,10 +421,10 @@ boot_save_boot_status(uint8_t sw_module,
     /* The TLV area always starts with an image_tlv_info structure. */
     res = LOAD_IMAGE_DATA(fap, offset, &tlv_header, sizeof(tlv_header));
     if (res) {
-        return 101;//BOOT_STATUS_ERROR;
+        return BOOT_STATUS_ERROR;
     }
     if (tlv_header.it_magic != IMAGE_TLV_INFO_MAGIC) {
-        return 102;//BOOT_STATUS_ERROR;
+        return BOOT_STATUS_ERROR;
     }
     tlv_end = offset + (uintptr_t)tlv_header.it_tlv_tot;
     offset += sizeof(tlv_header);
@@ -428,38 +433,35 @@ boot_save_boot_status(uint8_t sw_module,
      * and image hash TLVs.
      */
     while (offset < tlv_end) {
-
         res = LOAD_IMAGE_DATA(fap, offset, &tlv_entry, sizeof(tlv_entry));
         if (res) {
-            return 111;//BOOT_STATUS_ERROR;
+            return BOOT_STATUS_ERROR;
         }
 
-        if (tlv_entry.it_type == IMAGE_TLV_RSA2048_PSS){//TODO AR: juul tool doesn't seem to use this. (IMAGE_TLV_BOOT_RECORD)
-            if (tlv_entry.it_len == 0){//TODO AR: juul tool seems to like 12 sizeof(buf)) {
-                return tlv_entry.it_len;
-                return 103;//BOOT_STATUS_ERROR;
+        if (tlv_entry.it_type == IMAGE_TLV_BOOT_RECORD) {
+            if (tlv_entry.it_len > sizeof(buf)) {
+                return BOOT_STATUS_ERROR;
             }
             res = LOAD_IMAGE_DATA(fap, offset + sizeof(tlv_entry),
                                   buf, tlv_entry.it_len);
             if (res) {
-                return 104;//BOOT_STATUS_ERROR;
+                return BOOT_STATUS_ERROR;
             }
 
             record_len = tlv_entry.it_len;
             boot_record_found = 1;
-            continue;
 
         } else if (tlv_entry.it_type == IMAGE_TLV_SHA256) {
             /* Get the image's hash value from the manifest section. */
             if (tlv_entry.it_len > sizeof(image_hash)) {
-                return 105;//BOOT_STATUS_ERROR;
+                return BOOT_STATUS_ERROR;
             }
             res = LOAD_IMAGE_DATA(fap, offset + sizeof(tlv_entry),
                                   image_hash, tlv_entry.it_len);
             if (res) {
-                return 106;//BOOT_STATUS_ERROR;
+                return BOOT_STATUS_ERROR;
             }
-            boot_record_found = 1; //TODO AR: remove hack
+
             hash_found = 1;
 
             /* The boot record TLV is part of the protected TLV area which is
@@ -469,13 +471,6 @@ boot_save_boot_status(uint8_t sw_module,
              */
             break;
         }
-        else //TODO AR: remove debug
-        {
-            boot_transmit_error_code_serial(69, 69);
-            boot_transmit_error_code_serial(tlv_entry.it_type , tlv_entry.it_len);
-        }
-        
-
 
         /* Avoid integer overflow. */
         if ((UINTPTR_MAX - offset) <
@@ -486,13 +481,10 @@ boot_save_boot_status(uint8_t sw_module,
             offset += sizeof(tlv_entry) + tlv_entry.it_len;
         }
     }
-   
+
+
     if (!boot_record_found || !hash_found) {
-        boot_transmit_error_code_serial(0x69, 0x69);
-        boot_transmit_error_code_serial(boot_record_found, hash_found);
-        boot_transmit_error_code_serial(tlv_entry.it_len ,tlv_end);
-        boot_transmit_error_code_serial(tlv_entry.it_type , sizeof(buf));
-        return 107;//BOOT_STATUS_ERROR;
+        return BOOT_STATUS_ERROR;
     }
 
     /* Update the measurement value (hash of the image) data item in the
@@ -506,7 +498,7 @@ boot_save_boot_status(uint8_t sw_module,
     offset = record_len - sizeof(image_hash);
     /* Avoid buffer overflow. */
     if ((offset + sizeof(image_hash)) > sizeof(buf)) {
-        //return BOOT_STATUS_ERROR;
+        return BOOT_STATUS_ERROR;
     }
     memcpy(buf + offset, image_hash, sizeof(image_hash));
 
@@ -517,7 +509,7 @@ boot_save_boot_status(uint8_t sw_module,
                                         record_len,
                                         buf);
     if (res2) {
-        return 108;//BOOT_STATUS_ERROR;
+        return BOOT_STATUS_ERROR;
     }
 
     return BOOT_STATUS_OK;

@@ -50,11 +50,9 @@ extern "C" {
  */
 #include <inttypes.h>
 
-
- /*Added by AR, TODO: identify if this is the best place for it */
-#define MCUBOOT_IMAGE_NUMBER (1)
-
 extern uint8_t current_image;
+
+#define MCUBOOT_IMAGE_NUMBER (1)
 
 #if (MCUBOOT_IMAGE_NUMBER == 1)
 #define FLASH_AREA_IMAGE_PRIMARY     FLASH_AREA_0_ID

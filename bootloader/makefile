@@ -43,6 +43,7 @@ SRC += main.c serial_abstract.c
 SRC += dummy_nv_counters.c boot_record.c tlv.c
 SRC += security_cnt.c loader.c  flash_map.c Driver_Flash.c image_validate.c keys.c image_rsa.c bootutil_misc.c 
 
+
 #OPT = 3
 
 #FUNC_SEL = NONE
@@ -51,15 +52,15 @@ SRC += security_cnt.c loader.c  flash_map.c Driver_Flash.c image_validate.c keys
 #CFLAGS += -D$(FUNC_SEL)
 CFLAGS += --specs=nosys.specs #this stubs IO calls such as printf 
 CFLAGS += -std=c99  #use c99 dialect
+CFLAGS += -D DISABLE_SHARED_SAVE #See boot_record.c, boot_save_boot_status.
+ 								 #This feature was used by TF-M for measurement purposes. Using it currently causes a hard fault
 
-#TODO: get this working as a standalone
+#TODO AR: get this working as a standalone
 #TFMPATH = trusted_firmware_src
 #include $(TFMPATH)/Makefile.tfm
 
 MBEDTLS_PATH = ../mbedtls
 MBED_CRYPTO_PATH = ../mbed-crypto
-#include $(MBEDTLS_PATH)/Makefile
-#include $(MBED_CRYPTO_PATH)/Makefile
 
 #Add necessary chip whisperer files to project build
 FIRMWAREPATH = ../chipwhisperer/hardware/victims/firmware

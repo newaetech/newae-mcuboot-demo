@@ -218,26 +218,14 @@ static int32_t ARM_Flash_PowerControl(ARM_POWER_STATE state)
     }
 }
 
-volatile uint32_t debug_read_addr = 0;
-volatile uint32_t debug_read_cnt = 0;
-volatile uint32_t debug_read_rc = 0;
 static int32_t ARM_Flash_ReadData(uint32_t addr, void *data, uint32_t cnt)
 {
-    debug_read_addr = addr;
-    debug_read_cnt = cnt;
 
-    //uint32_t start_addr = FLASH0_DEV->memory_base + addr;
     uint32_t start_addr = addr;
 
     int32_t rc = 0;
 
-    char test[64];
-    sprintf(test, "Read at address: %x Cnt: %x \n", addr, cnt);
-    serial_transmit(test);
-
     /* Check flash memory boundaries */
-    rc = is_range_valid(FLASH0_DEV, addr + cnt);
-    debug_read_rc = rc;
     if (rc != 0) {
         return ARM_DRIVER_ERROR_PARAMETER;
     }
@@ -250,10 +238,6 @@ static int32_t ARM_Flash_ReadData(uint32_t addr, void *data, uint32_t cnt)
 static volatile int32_t ARM_Flash_ProgramData(uint32_t addr, const void *data,
                                      uint32_t cnt)
 {
-    char test[64];
-    sprintf(test, "Programmed address: %x Cnt: %x", addr, cnt);
-    serial_transmit(test);
-
     volatile uint32_t mem_base = FLASH0_DEV->memory_base;
     int32_t rc = 0;
 
@@ -286,9 +270,6 @@ static volatile int32_t ARM_Flash_ProgramData(uint32_t addr, const void *data,
         };
         write_count++;
     }
-
-    char str[64];
-    sprintf(str, "Write count: %u", write_count);    
 
     flash_lock();
  
@@ -340,9 +321,6 @@ static int32_t ARM_Flash_EraseSector(uint32_t addr)
     return ARM_DRIVER_OK;
 }
 
-volatile uint32_t debug_index = 0;
-
-//AR: Unused
 static int32_t ARM_Flash_EraseChip(void)
 {
 
