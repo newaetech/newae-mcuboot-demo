@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <hal.h>
-#include <stm32f303xc.h> //TODO: this is a hack to get the code to compile, find the correct way to get stm32f3xx.h included
+#include <stm32f303xc.h> 
 #include <core_cm4.h>
 #include <cmsis_gcc.h>
 

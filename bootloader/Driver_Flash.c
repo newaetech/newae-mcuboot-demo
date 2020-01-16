@@ -71,11 +71,11 @@ typedef struct FL_STM32F303
                                        //which should workout to 12K + 0x20000000 = 0x20000400
 */
 
-#define FLASH0_BASE_S         0x08006000 //Start at writable space, not at bootloader
-#define FLASH0_BASE_NS        0x00180000 //TODO: Not used
-#define FLASH0_SIZE           0x40000
-#define FLASH0_SECTOR_SIZE    0x0000800 //2 kB 
-#define FLASH0_PAGE_SIZE      0x0000800 //2 kB 
+#define FLASH0_BASE_S         FLASH_AREA_0_SIZE //Start at writable space, not at bootloader
+#define FLASH0_BASE_NS        (FLASH0_BASE_S + FLASH_S_PARTITION_SIZE) //TODO: Not used
+#define FLASH0_SIZE           FLASH_AREA_0_SIZE
+#define FLASH0_SECTOR_SIZE    FLASH_AREA_IMAGE_SECTOR_SIZE //2 kB 
+#define FLASH0_PAGE_SIZE      FLASH_AREA_IMAGE_SECTOR_SIZE //2 kB 
 #define FLASH0_PROGRAM_UNIT   0x1        // Minimum write size 
 
 #define FLASH_REDIRECT_BASE FLASH0_BASE_S
@@ -119,7 +119,7 @@ static int32_t is_range_valid(struct arm_flash_dev_t *flash_dev,
     uint32_t flash_limit = 0;
     volatile int32_t rc = 0;
 
-    if (offset >= FLASH0_BASE_S && offset <= FLASH_REGION_1_MAX) 
+    if (offset >= FLASH_AREA_0_OFFSET && offset <= FLASH_REGION_1_MAX) 
     {
         rc = 0;
     }
@@ -169,7 +169,7 @@ static struct arm_flash_dev_t ARM_FLASH0_DEV = {
 #if (__DOMAIN_NS == 1)
     .memory_base = FLASH0_BASE_NS,
 #else
-    .memory_base = FLASH0_BASE_S,
+    .memory_base = FLASH_AREA_0_OFFSET,
 #endif /* __DOMAIN_NS == 1 */
     .data        = &(ARM_FLASH0_DEV_DATA)};
 
