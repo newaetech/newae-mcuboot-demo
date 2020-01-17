@@ -60,9 +60,9 @@ def write_app_a():
 def write_app_b():
     fw_path = r'..\..\AppB\APP_B_SIGNED-CWLITEARM.hex'
     prog = cw.programmers.STM32FProgrammer
-    program_bootloader(scope, prog, fw_path)        
+    program_bootloader(scope, prog, fw_path, 0x10000)        
 
-def program_bootloader(scope, prog_type, fw_path, **kwargs):
+def program_bootloader(scope, prog_type, fw_path, offset=0, **kwargs):
     """Program the target using the programmer without erasing additional space <type>
 
     Programmers can be found in the programmers submodule
@@ -83,9 +83,8 @@ def program_bootloader(scope, prog_type, fw_path, **kwargs):
     prog._logging = None
     prog.open()
     prog.find()
-    prog.erase(True, fw_path)
-    #prog.erase()
-    prog.program(fw_path, memtype="flash", verify=True)
+    prog.erase(True, fw_path, offset=offset)
+    prog.program(fw_path, memtype="flash", verify=True, offset=offset)
     prog.close()
 
 if( __name__ == "__main__"):
