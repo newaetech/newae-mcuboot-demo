@@ -125,7 +125,6 @@ static int32_t is_range_valid(struct arm_flash_dev_t *flash_dev,
     }
     else
     {
-        boot_transmit_error_code_serial(100,offset);  
         rc = -1;
     }
 
@@ -306,24 +305,18 @@ static int32_t ARM_Flash_EraseSector(uint32_t addr)
     rc  = is_range_valid(FLASH0_DEV, addr);
     rc |= is_sector_aligned(FLASH0_DEV, addr);
     if (rc != 0) {
-        sprintf(str, "Failed to erase page at: Addr: %x \n", addr);
-        serial_transmit(str);
         return ARM_DRIVER_ERROR_PARAMETER;
     }
 
     flash_unlock();
     FLASH_PageErase(addr);
     flash_lock();
-
-    sprintf(str, "Just erased page at: Addr: %x \n", addr);
-    serial_transmit(str);
-    
+   
     return ARM_DRIVER_OK;
 }
 
 static int32_t ARM_Flash_EraseChip(void)
 {
-
     return 0;
 #if 0
     uint32_t i;

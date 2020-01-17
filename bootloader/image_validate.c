@@ -307,7 +307,6 @@ bootutil_get_img_security_cnt(struct image_header *hdr,
         (fap == NULL) ||
         (img_security_cnt == NULL)) {
         /* Invalid parameter. */
-            boot_transmit_error_code_serial(29, 90);
         return BOOT_EBADARGS;
     }
 
@@ -317,12 +316,10 @@ bootutil_get_img_security_cnt(struct image_header *hdr,
     /* The TLV area always starts with an image_tlv_info structure. */
     rc = LOAD_IMAGE_DATA(fap, off, &info, sizeof(info));
     if (rc != 0) {
-            boot_transmit_error_code_serial(29, 91);
         return BOOT_EFLASH;
     }
 
     if (info.it_magic != IMAGE_TLV_INFO_MAGIC) {
-            boot_transmit_error_code_serial(29, 92);
         return BOOT_EBADMAGIC;
     }
 
@@ -337,8 +334,6 @@ bootutil_get_img_security_cnt(struct image_header *hdr,
         while (off < end) {
             rc = LOAD_IMAGE_DATA(fap, off, &tlv, sizeof(tlv));
             if (rc != 0) {
-                                        boot_transmit_error_code_serial(29, 99);
-
                 return BOOT_EFLASH;
             }
 
@@ -353,13 +348,11 @@ bootutil_get_img_security_cnt(struct image_header *hdr,
                 rc = LOAD_IMAGE_DATA(fap, off + sizeof(tlv),
                                      img_security_cnt, tlv.it_len);
                 if (rc != 0) {
-                        boot_transmit_error_code_serial(29, 94);
                     return BOOT_EFLASH;
                 }
 
                 /* Security counter has been found. */
                 found = 1;
-                    boot_transmit_error_code_serial(29, 95);
                 break;
             }
 
@@ -367,11 +360,9 @@ bootutil_get_img_security_cnt(struct image_header *hdr,
             if (boot_add_uint32_overflow_check(off, (sizeof(tlv) + tlv.it_len)))
             {
                 /* Potential overflow. */
-                    boot_transmit_error_code_serial(29, 96);
                 break;
             } else {
                 off += sizeof(tlv) + tlv.it_len;
-                    boot_transmit_error_code_serial(29, 97);
             }
         }
     }
@@ -379,10 +370,5 @@ bootutil_get_img_security_cnt(struct image_header *hdr,
     if (found) {
         return 0;
     }
-    boot_transmit_error_code_serial(29, found);
-    boot_transmit_error_code_serial(tlv.it_type, IMAGE_TLV_SEC_CNT);
-    boot_transmit_error_code_serial(tlv.it_len, sizeof(*img_security_cnt));
-
-    boot_transmit_error_code_serial(29, 98);
     return -1;
 }

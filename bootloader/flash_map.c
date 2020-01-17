@@ -112,7 +112,6 @@ int flash_device_base(uint8_t fd_id, uintptr_t *ret)
     if (fd_id != FLASH_DEVICE_ID) {
         BOOT_LOG_ERR("invalid flash ID %d; expected %d",
                      fd_id, FLASH_DEVICE_ID);
-        boot_transmit_error_code_serial(0, fd_id);             
         return -1;
     }
     *ret = FLASH_DEVICE_BASE;
@@ -158,12 +157,10 @@ void flash_area_close(const struct flash_area *area)
     entry = CONTAINER_OF(area, struct flash_map_entry, area);
     if (entry->magic != FLASH_MAP_ENTRY_MAGIC) {
         BOOT_LOG_ERR("invalid area %p (id %u)", area, area->fa_id);
-        boot_transmit_error_code_serial(1, area->fa_id); 
         return;
     }
     if (entry->ref_count == 0) {
         BOOT_LOG_ERR("area %u use count underflow", area->fa_id);
-        boot_transmit_error_code_serial(2, area->fa_id); 
         return;
     }
     entry->ref_count--;
@@ -181,7 +178,6 @@ void flash_area_warn_on_open(void)
         if (entry->ref_count) {
             BOOT_LOG_WRN("area %u has %u users",
                          entry->area.fa_id, entry->ref_count);
-            boot_transmit_error_code_serial(21, i);   
         }
     }
 }
@@ -303,7 +299,6 @@ int flash_area_id_to_image_slot(int area_id)
     }
 
     BOOT_LOG_ERR("invalid flash area ID");
-    boot_transmit_error_code_serial(3, area_id); 
     return -1;
 }
 
@@ -368,7 +363,6 @@ int flash_area_to_sectors(int idx, int *cnt, struct flash_area *ret)
         if (rem_len < FLASH_AREA_IMAGE_SECTOR_SIZE) {
             BOOT_LOG_ERR("area %d size 0x%x not divisible by sector size 0x%x",
                      idx, len, FLASH_AREA_IMAGE_SECTOR_SIZE);
-            boot_transmit_error_code_serial(4, idx); 
          
             return -1;
         }
@@ -384,7 +378,6 @@ int flash_area_to_sectors(int idx, int *cnt, struct flash_area *ret)
 
     if (*cnt > max_cnt) {
         BOOT_LOG_ERR("flash area %d sector count overflow", idx);
-        boot_transmit_error_code_serial(5, idx); 
         return -1;
     }
 
@@ -417,8 +410,7 @@ int flash_area_get_sectors(int idx, uint32_t *cnt, struct flash_sector *ret)
     while (rem_len > 0 && *cnt < max_cnt) {
         if (rem_len < FLASH_AREA_IMAGE_SECTOR_SIZE) {
             BOOT_LOG_ERR("area %d size 0x%x not divisible by sector size 0x%x",
-                         idx, len, FLASH_AREA_IMAGE_SECTOR_SIZE);
-            boot_transmit_error_code_serial(6, idx);              
+                         idx, len, FLASH_AREA_IMAGE_SECTOR_SIZE);           
             return -1;
         }
 
@@ -430,7 +422,6 @@ int flash_area_get_sectors(int idx, uint32_t *cnt, struct flash_sector *ret)
 
     if (*cnt > max_cnt) {
         BOOT_LOG_ERR("flash area %d sector count overflow", idx);
-        boot_transmit_error_code_serial(7, idx);  
         return -1;
     }
 

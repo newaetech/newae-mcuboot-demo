@@ -165,23 +165,17 @@ boot_verify_image_header(struct image_header *hdr)
 {
     uint32_t image_end;
 
-    if (hdr->ih_magic != IMAGE_MAGIC) {       
-
-        boot_transmit_error_code_serial(1060, hdr->ih_magic);
-        boot_transmit_error_code_serial(1061, hdr->ih_load_addr);
-        boot_transmit_error_code_serial(1062, IMAGE_MAGIC);
+    if (hdr->ih_magic != IMAGE_MAGIC) {
         return BOOT_EBADIMAGE;
     }
 
     /* Check input parameters against integer overflow */
     if (boot_add_uint32_overflow_check(hdr->ih_hdr_size, hdr->ih_img_size)) {
-        boot_transmit_error_code_serial(104, image_end);
         return BOOT_EBADIMAGE;
     }
 
     image_end = hdr->ih_hdr_size + hdr->ih_img_size;
     if (boot_add_uint32_overflow_check(image_end, hdr->ih_protect_tlv_size)) {
-                boot_transmit_error_code_serial(105, image_end);
         return BOOT_EBADIMAGE;
     }
 
@@ -218,17 +212,11 @@ boot_read_image_header(int slot, struct image_header *out_hdr)
 
     if (rc != 0) {
         rc = BOOT_EFLASH;
-        boot_transmit_error_code_serial(102, rc);
         goto done;
     }
 
     rc = boot_verify_image_header(out_hdr);
 
-    if(rc != 0u)
-    {
-        boot_transmit_error_code_serial(1064, slot);
-        boot_transmit_error_code_serial(1065, fap->fa_off);
-    }
     BOOT_IMG_HDR_IS_VALID(&boot_data, slot) = (rc == 0);
 
 done:
@@ -404,8 +392,7 @@ boot_validate_slot(int slot, struct boot_status *bs)
              */
         }
         BOOT_LOG_ERR("Authentication failed! Image in the %s slot is not valid."
-                     , (slot == BOOT_PRIMARY_SLOT) ? "primary" : "secondary");
-        boot_transmit_error_code_serial(8, slot);               
+                     , (slot == BOOT_PRIMARY_SLOT) ? "primary" : "secondary");               
         rc = -1;
         goto out;
     }
@@ -454,8 +441,6 @@ boot_update_security_counter(int slot, struct image_header *hdr)
 
 done:
     flash_area_close(fap);
-    boot_transmit_error_code_serial(29, 0xff);
-        boot_transmit_error_code_serial(29, rc);
     return rc;
 }
 
@@ -587,7 +572,6 @@ boot_slots_compatible(void)
     if ((num_sectors_primary > BOOT_MAX_IMG_SECTORS) ||
         (num_sectors_secondary > BOOT_MAX_IMG_SECTORS)) {
         BOOT_LOG_WRN("Cannot upgrade: more sectors than allowed");
-        boot_transmit_error_code_serial(22, num_sectors_primary); 
         return 0;
     }
 
@@ -616,8 +600,7 @@ boot_slots_compatible(void)
              */
             if (smaller == 2) {
                 BOOT_LOG_WRN("Cannot upgrade: slots have non-compatible"
-                             " sectors");
-                boot_transmit_error_code_serial(23, num_sectors_primary);              
+                             " sectors");       
                 return 0;
             }
             smaller = 1;
@@ -629,8 +612,7 @@ boot_slots_compatible(void)
              */
             if (smaller == 1) {
                 BOOT_LOG_WRN("Cannot upgrade: slots have non-compatible"
-                             " sectors");
-                boot_transmit_error_code_serial(24, num_sectors_primary);              
+                             " sectors");       
                 return 0;
             }
             smaller = 2;
@@ -644,10 +626,7 @@ boot_slots_compatible(void)
              */
             if (sz0 > scratch_sz || sz1 > scratch_sz) {
                 BOOT_LOG_WRN("Cannot upgrade: not all sectors fit inside"
-                             " scratch");
-                boot_transmit_error_code_serial(25, scratch_sz);
-                boot_transmit_error_code_serial(25, sz0);
-                boot_transmit_error_code_serial(25, sz1);             
+                             " scratch");          
                 return 0;
             }
             smaller = sz0 = sz1 = 0;
@@ -658,9 +637,6 @@ boot_slots_compatible(void)
         (j != num_sectors_secondary) ||
         (primary_slot_sz != secondary_slot_sz)) {
         BOOT_LOG_WRN("Cannot upgrade: slots are not compatible");
-        boot_transmit_error_code_serial(26, i);
-        boot_transmit_error_code_serial(26, j);
-        boot_transmit_error_code_serial(26, num_sectors_primary);
         return 0;
     }
 
@@ -725,7 +701,6 @@ boot_read_status_bytes(const struct flash_area *fap, struct boot_status *bs)
          * swap. Tell user and move on to validation!
          */
         BOOT_LOG_ERR("Detected inconsistent status!");
-        boot_transmit_error_code_serial(9, found_idx);  
 
 #if !defined(MCUBOOT_VALIDATE_PRIMARY_SLOT)
         /* With validation of the primary slot disabled, there is no way
@@ -1794,8 +1769,7 @@ boot_perform_update(struct boot_status *bs)
                              boot_img_hdr(&boot_data, BOOT_SECONDARY_SLOT));
         if (rc != 0) {
             BOOT_LOG_ERR("Security counter update failed after "
-                         "image upgrade.");
-            boot_transmit_error_code_serial(10, rc);               
+                         "image upgrade.");     
             BOOT_SWAP_TYPE(&boot_data) = BOOT_SWAP_TYPE_PANIC;
         }
     }
@@ -1856,7 +1830,6 @@ boot_complete_partial_swap(struct boot_status *bs)
 
     if (BOOT_SWAP_TYPE(&boot_data) == BOOT_SWAP_TYPE_PANIC) {
         BOOT_LOG_ERR("panic!");
-        boot_transmit_error_code_serial(11, bs->idx);  
         assert(0);
 
         /* Loop forever... */
@@ -1942,8 +1915,7 @@ boot_prepare_image_for_update(struct boot_status *bs)
     rc = boot_read_sectors();
     if (rc != 0) {
         BOOT_LOG_WRN("Failed reading sectors; BOOT_MAX_IMG_SECTORS=%d"
-                     " - too small?", BOOT_MAX_IMG_SECTORS);
-        boot_transmit_error_code_serial(27, rc);             
+                     " - too small?", BOOT_MAX_IMG_SECTORS);           
         /* Unable to determine sector layout, continue with next image
          * if there is one.
          */
@@ -1956,7 +1928,6 @@ boot_prepare_image_for_update(struct boot_status *bs)
     if (rc != 0) {
         /* Continue with next image if there is one. */
         BOOT_LOG_WRN("Failed reading image headers; Image=%u", current_image);
-        boot_transmit_error_code_serial(28, rc); 
         BOOT_SWAP_TYPE(&boot_data) = BOOT_SWAP_TYPE_NONE;
         return;
     }
@@ -2134,7 +2105,6 @@ boot_go(struct boot_rsp *rsp)
 
         if (BOOT_SWAP_TYPE(&boot_data) == BOOT_SWAP_TYPE_PANIC) {
             BOOT_LOG_ERR("panic!");
-            boot_transmit_error_code_serial(12,current_image);  
             assert(0);
 
             /* Loop forever... */
@@ -2176,7 +2146,6 @@ boot_go(struct boot_rsp *rsp)
          */
         if (!BOOT_IMG_HDR_IS_VALID(&boot_data, slot)) {
             BOOT_LOG_ERR("Invalid image header Image=%u", current_image);
-            boot_transmit_error_code_serial(13,slot);  
             rc = BOOT_EBADIMAGE;
             goto out;
         }
@@ -2198,8 +2167,7 @@ boot_go(struct boot_rsp *rsp)
             if (rc != 0) {
                 BOOT_LOG_ERR("Security counter update failed after image "
                              "validation.");
-
-                boot_transmit_error_code_serial(14,rc);               
+            
                 goto out;
             }
         }
@@ -2219,7 +2187,6 @@ boot_go(struct boot_rsp *rsp)
         if (rc) {
             BOOT_LOG_ERR("Failed to add Image %u data to shared area",
                          current_image);
-            boot_transmit_error_code_serial(15,rc);    
         }
     }
 
