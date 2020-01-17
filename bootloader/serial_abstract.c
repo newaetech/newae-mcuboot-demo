@@ -28,11 +28,6 @@
 
 #define BUFLEN 64
 
-uint8_t memory[BUFLEN];
-uint8_t tmp[BUFLEN];
-char asciibuf[BUFLEN];
-uint8_t pt[16];
-
 static void delay_2_ms(void);
 
 void serial_transmit(char *c)

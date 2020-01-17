@@ -93,7 +93,7 @@
  * swapping.
  */
 #define FLASH_AREA_BL2_OFFSET      0x8000000
-#define FLASH_AREA_BL2_SIZE        (0x6000) 
+#define FLASH_AREA_BL2_SIZE        (0x8000) 
 #if !defined(MCUBOOT_IMAGE_NUMBER) || (MCUBOOT_IMAGE_NUMBER == 1)
 /* Secure + Non-secure image primary slot */
 #define FLASH_AREA_0_ID            (1)

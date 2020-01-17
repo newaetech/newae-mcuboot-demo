@@ -41,7 +41,9 @@ int main(void)
 
     platform_init();
     init_uart();
-    trigger_setup();
+    //trigger_setup();
+
+
 
     //This is needed on XMEGA examples, but not normally on ARM. ARM doesn't have this macro normally anyway.
     #ifdef __AVR__

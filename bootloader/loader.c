@@ -165,8 +165,7 @@ boot_verify_image_header(struct image_header *hdr)
 {
     uint32_t image_end;
 
-    if (hdr->ih_magic != IMAGE_MAGIC) {
-        
+    if (hdr->ih_magic != IMAGE_MAGIC) {       
 
         boot_transmit_error_code_serial(1060, hdr->ih_magic);
         boot_transmit_error_code_serial(1061, hdr->ih_load_addr);
@@ -417,7 +416,7 @@ boot_validate_slot(int slot, struct boot_status *bs)
 out:
     flash_area_close(fap);
 
-    return rc; //original
+    return rc;
 }
 
 /**

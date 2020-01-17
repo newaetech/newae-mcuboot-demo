@@ -44,7 +44,6 @@
 
 #include "bootutil_priv.h"
 
-
 /*
  * Compute SHA256 over the image.
  */
@@ -162,6 +161,8 @@ bootutil_find_key(uint8_t *keyhash, uint8_t keyhash_len)
 }
 #endif
 
+
+
 /*
  * Verify the integrity of the image.
  * Return non-zero if image could not be validated/does not validate.
@@ -170,7 +171,8 @@ volatile int bootutil_img_validate(struct image_header *hdr,
                           const struct flash_area *fap,
                           uint8_t *tmp_buf, uint32_t tmp_buf_sz,
                           uint8_t *seed, int seed_len, uint8_t *out_hash)
-{
+{   
+
     uint32_t off;
     uint16_t len;
     uint8_t type;

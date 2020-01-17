@@ -17,13 +17,6 @@
  * under the License.
  */
 
-/*
- * Original code taken from mcuboot project at:
- * https://github.com/JuulLabs-OSS/mcuboot
- * Git SHA of the original version: 3c469bc698a9767859ed73cd0201c44161204d5c
- * Modifications are Copyright (c) 2018-2019 Arm Limited.
- */
-
 #include <string.h>
 
 #ifdef MCUBOOT_SIGN_RSA
@@ -34,12 +27,12 @@
 #include "mbedtls/asn1.h"
 #include "mbedtls/version.h"
 
-#include "bootutil_priv.h"
+#include <bootutil_priv.h>
 
 /*
  * Constants for this particular constrained implementation of
- * RSA-PSS.  In particular, we support RSA 2048 and RSA 3072, with a SHA256
- * hash, and a 32-byte salt.  A signature with different parameters will be
+ * RSA-PSS.  In particular, we support RSA 2048, with a SHA256 hash,
+ * and a 32-byte salt.  A signature with different parameters will be
  * rejected as invalid.
  */
 
@@ -72,12 +65,11 @@ static const uint8_t pss_zeros[8] = {0};
 static int
 bootutil_parse_rsakey(mbedtls_rsa_context *ctx, uint8_t **p, uint8_t *end)
 {
-    int rc, rc2;
+    int rc;
     size_t len;
 
-    rc = mbedtls_asn1_get_tag(p, end, &len,
-                            MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE);
-    if (rc != 0) {
+    if ((rc = mbedtls_asn1_get_tag(p, end, &len,
+          MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE)) != 0) {
         return -1;
     }
 
@@ -85,9 +77,8 @@ bootutil_parse_rsakey(mbedtls_rsa_context *ctx, uint8_t **p, uint8_t *end)
         return -2;
     }
 
-    rc  = mbedtls_asn1_get_mpi(p, end, &ctx->N);
-    rc2 = mbedtls_asn1_get_mpi(p, end, &ctx->E);
-    if ((rc != 0) || (rc2 != 0)) {
+    if ((rc = mbedtls_asn1_get_mpi(p, end, &ctx->N)) != 0 ||
+      (rc = mbedtls_asn1_get_mpi(p, end, &ctx->E)) != 0) {
         return -3;
     }
 
@@ -198,7 +189,7 @@ bootutil_cmp_rsasig(mbedtls_rsa_context *ctx, uint8_t *hash, uint32_t hlen,
      * The salt length is not known at this point.
      */
 
-    /* Step 4.  If the rightmost octect of EM does have the value
+    /* Step 4.  If the rightmost octet of EM does have the value
      * 0xbc, output inconsistent and stop.
      */
     if (em[PSS_EMLEN - 1] != 0xbc) {
@@ -263,7 +254,7 @@ bootutil_cmp_rsasig(mbedtls_rsa_context *ctx, uint8_t *hash, uint32_t hlen,
 
     /* Step 14.  If H = H', output "consistent".  Otherwise, output
      * "inconsistent". */
-    if (boot_secure_memequal(h2, &em[PSS_HASH_OFFSET], PSS_HLEN) != 0) {
+    if (memcmp(h2, &em[PSS_HASH_OFFSET], PSS_HLEN) != 0) {
         return -1;
     }
 

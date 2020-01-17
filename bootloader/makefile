@@ -55,6 +55,8 @@ CFLAGS += -std=c99  #use c99 dialect
 CFLAGS += -D DISABLE_SHARED_SAVE #See boot_record.c, boot_save_boot_status.
  								 #This feature was used by TF-M for measurement purposes. Using it currently causes a hard fault
 
+CFLAGS += -D MCUBOOT_SIGN_RSA
+
 #TODO AR: get this working as a standalone
 #TFMPATH = trusted_firmware_src
 #include $(TFMPATH)/Makefile.tfm

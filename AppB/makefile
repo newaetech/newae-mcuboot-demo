@@ -53,4 +53,3 @@ FIRMWAREPATH = ../chipwhisperer/hardware/victims/firmware
 
 include $(FIRMWAREPATH)/simpleserial/Makefile.simpleserial
 include $(FIRMWAREPATH)/Makefile.inc
-
