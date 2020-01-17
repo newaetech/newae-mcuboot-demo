@@ -299,8 +299,9 @@ static inline void flash_lock(void)
 
 static int32_t ARM_Flash_EraseSector(uint32_t addr)
 {
-    uint32_t rc = 0;
+    uint32_t rc = ARM_DRIVER_OK;
     char str[64];
+    
 
     rc  = is_range_valid(FLASH0_DEV, addr);
     rc |= is_sector_aligned(FLASH0_DEV, addr);
@@ -309,10 +310,13 @@ static int32_t ARM_Flash_EraseSector(uint32_t addr)
     }
 
     flash_unlock();
-    FLASH_PageErase(addr);
+    if(HAL_FLASH_PageErase(addr) != HAL_OK)
+    {
+        rc = ARM_DRIVER_ERROR_TIMEOUT;
+    }
     flash_lock();
    
-    return ARM_DRIVER_OK;
+    return rc;
 }
 
 static int32_t ARM_Flash_EraseChip(void)
