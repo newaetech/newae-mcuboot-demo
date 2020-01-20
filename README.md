@@ -28,14 +28,14 @@ Note all development occurs on here [trunk](https://github.com/newaetech/ca_boot
 ## Running
 To make and run the demo simply run
 
-# Windows:
+##  Windows:
 ..\ca_bootloader\Scripts\demo_build_bootloader_and_apps.bat
 
-# Linux
+## Linux
 ..\ca_bootloader\Scripts\demo_build_bootloader_and_apps.sh
 
 
-##Development Notes
+# Development Notes
 
 Each application has only 64KB space allocated for it.
 The app to be loaded must use the same starting ROM addresses. The offset in programming is handled with firmware_loader.py 
@@ -45,11 +45,11 @@ If you wish to modify the bootloader it must not exceed address space 0x08008000
 The primary base of the firmware is handled in the chipwhisperer libraries. If you want to port to a different micro flash_layout.h and Driver_Flash.c are the primary
 starting points.
 
-# Python Scripts
+##  Python Scripts
 
 FirmwareLoader\firmware_loader.py can be used to automatically program the applications at the correct offsets. Default paths will be used unless specified otherwise.
 
-# Linker Script Notes
+##  Linker Script Notes
 
 Note: The addresses in the example are only gaurenteed to work for the STM32F303RCT7
 
@@ -57,7 +57,7 @@ Bootloader: Starting address 0x08000000
 App A: Starting address 0x08008000
 App B: Starting address 0x08008000 ***NOTE*** When programming it, it must be offset by 0x10000 (see firmware_loader.py)
 
-# Header Allocation
+## Header Allocation
 
 For the signing tool to work header space must be allocated in your application.
 
