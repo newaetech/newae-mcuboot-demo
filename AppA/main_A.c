@@ -25,6 +25,7 @@
 
 void serial_transmit(char *c);
 void serial_read(char *buf, int len);
+volatile void app_loop_a();
 
 volatile char __attribute__((section(".header"))) image_header[0x400];
 

@@ -41,19 +41,6 @@
 typedef unsigned long uint32_t;
 typedef long int32_t;
 
-#define BL_PAGE_COUNT           (FLASH_AREA_BL2_SIZE / FLASH_AREA_PAGE_SIZE) 
-#define APP_SPACE_PAGE_COUNT    (FLASH_AREA_0_SIZE / FLASH_AREA_PAGE_SIZE) 
-
-typedef struct
-{
-    uint32_t page[FLASH_AREA_PAGE_SIZE];
-}ts_flash_page_layout;
-
-typedef struct FL_STM32F303
-{
-    
-}ts_flash_layout;
-
 #ifndef ARG_UNUSED
 #define ARG_UNUSED(arg)  ((void)arg)
 #endif
