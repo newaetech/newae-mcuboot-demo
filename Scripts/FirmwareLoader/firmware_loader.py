@@ -1,5 +1,6 @@
 from enum import Enum     # for enum34, or the stdlib version
 from tqdm import tnrange
+import sys, getopt
 import matplotlib
 import matplotlib.pyplot as plt
 from collections import namedtuple
@@ -13,6 +14,11 @@ from datetime import datetime
 SCOPETYPE = 'OPENADC'
 PLATFORM = 'CWLITEARM'
 sample_size = 5
+
+default_bl_path   = r'..\..\bootloader\NEWAE_BL-CWLITEARM.hex'
+default_fw_a_path = r'..\..\AppA\APP_A_SIGNED-CWLITEARM.hex'
+default_fw_b_path = r'..\..\AppB\APP_B_SIGNED-CWLITEARM.hex'
+
 
 if "STM" in PLATFORM or PLATFORM == "CWLITEARM" or PLATFORM == "CWNANO":
     prog = cw.programmers.STM32FProgrammer
@@ -29,40 +35,59 @@ except NameError:
     
 target = cw.target(scope)
 
-def main():
+def main(argv):
+    hex_bl_path = default_bl_path
+    hex_a_path = default_fw_a_path
+    hex_b_path = default_fw_b_path
+    
+    try:    
+        opts,argv = getopt.getopt(argv,"h:bl:b:a",["bootloader_path=","a_path=","b_path="])
+    except getopt.GetoptError:
+        print('Path error detected, using default paths instead')
+    
+    for opt, arg in opts:
+        if opt in ("-h", "--help"):
+            print ("firmware_loader.py -bl <bl_path> -a <a_path> -b <b_path>")
+            sys.exit()
+        elif opt in ("-bl", "--bootloader_path"):
+            hex_bl_path = arg                       
+        elif opt in ("-a", "--a_path"):
+            hex_bl_path = arg
+        elif opt in ("-b", "--b_path"):
+            hex_bl_path = arg  
+            
     setup()
-    #write_bootloader()
     time.sleep(1)
-    write_app_a()
+    write_app_a(hex_a_path)
     time.sleep(1)
-    write_app_b()
+    write_app_b(hex_b_path)
+    time.sleep(1)
+    write_bootloader(hex_bl_path)
+    monitor()
     
 def setup():    
 
-    scope = cw.scope()
-    
+    scope = cw.scope()    
     time.sleep(0.05)
     scope.default_setup()
     helper.reset_target(scope)
     
-def write_bootloader():
-    fw_path = r'..\..\bootloader\NEWAE_BL-CWLITEARM.hex'
-
+def write_bootloader(fw_path):
+    print("Programming bootloader...")
     prog = cw.programmers.STM32FProgrammer
-    program_bootloader(scope, prog, fw_path)
+    program_hex(scope, prog, fw_path)
     
-def write_app_a():
-    #fw_path = r'..\..\AppA\APP_A-CWLITEARM.hex'
-    fw_path = r'..\..\AppA\APP_A_SIGNED-CWLITEARM.hex'
+def write_app_a(fw_path):
+    print("Programming App A...")
     prog = cw.programmers.STM32FProgrammer
-    program_bootloader(scope, prog, fw_path)
+    program_hex(scope, prog, fw_path)
     
-def write_app_b():
-    fw_path = r'..\..\AppB\APP_B_SIGNED-CWLITEARM.hex'
+def write_app_b(fw_path):
+    print("Programming App B...")
     prog = cw.programmers.STM32FProgrammer
-    program_bootloader(scope, prog, fw_path, 0x10000)        
+    program_hex(scope, prog, fw_path, 0x10000)        
 
-def program_bootloader(scope, prog_type, fw_path, offset=0, **kwargs):
+def program_hex(scope, prog_type, fw_path, offset=0, **kwargs):
     """Program the target using the programmer without erasing additional space <type>
 
     Programmers can be found in the programmers submodule
@@ -87,6 +112,14 @@ def program_bootloader(scope, prog_type, fw_path, offset=0, **kwargs):
     prog.program(fw_path, memtype="flash", verify=True, offset=offset)
     prog.close()
 
+def monitor():
+    line = ""
+    while(1):
+        
+        line += target.read()
+        if('\n' in line):
+            print(line)
+            line = ""
+            
 if( __name__ == "__main__"):
-    main()
-
+    main(sys.argv[1:])
