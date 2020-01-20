@@ -72,10 +72,11 @@ struct flash_area;
 #define IMAGE_TLV_RSA2048_PSS       0x20   /* RSA2048 of hash output */
 #define IMAGE_TLV_RSA3072_PSS       0x23   /* RSA3072 of hash output */
 #define IMAGE_TLV_DEPENDENCY        0x40   /* Image depends on other image */
-//#define IMAGE_TLV_SEC_CNT           0x50   /* security counter */
-#define IMAGE_TLV_SEC_CNT           0x40   /*NOTE AR: this is a hack required for image validate security counter */
+#define IMAGE_TLV_SEC_CNT           0x50   /* security counter */
 #define IMAGE_TLV_BOOT_RECORD       0x60   /* measured boot record */
 #define IMAGE_TLV_ANY               0xff   /* Used to iterate over all TLV (not originally part*/
+
+#define IMAGE_TLV_IT_LEN            12u
 
 #define IMAGE_VER_MAJOR_LENGTH      8
 #define IMAGE_VER_MINOR_LENGTH      8

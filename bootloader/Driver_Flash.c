@@ -38,8 +38,7 @@
 #include "serial_abstract.h"
 #include "bootutil_priv.h"
 
-typedef unsigned long uint32_t;
-typedef long int32_t;
+
 
 #ifndef ARG_UNUSED
 #define ARG_UNUSED(arg)  ((void)arg)
@@ -47,6 +46,8 @@ typedef long int32_t;
 
 /* Driver version */
 #define ARM_FLASH_DRV_VERSION ARM_DRIVER_VERSION_MAJOR_MINOR(1, 0)
+
+#define WORD_SIZE (4u)
 
 /*
 #define FLASH_REDIRECT_BASE   SST_FLASH_AREA_ADDR
@@ -245,7 +246,7 @@ static volatile int32_t ARM_Flash_ProgramData(uint32_t addr, const void *data,
 
     static uint32_t write_count = 0;
 
-    for(volatile uint32_t elem_cnt = 0; elem_cnt < cnt/4; elem_cnt++)
+    for(volatile uint32_t elem_cnt = 0; elem_cnt < cnt/WORD_SIZE; elem_cnt++)
     {
         volatile uint32_t word = *(elem_ptr + elem_cnt);
         volatile uint32_t address = (uint32_t)(addr + (elem_cnt * size_of_base_unit));

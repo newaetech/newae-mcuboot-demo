@@ -339,7 +339,7 @@ bootutil_get_img_security_cnt(struct image_header *hdr,
 
             if (tlv.it_type == IMAGE_TLV_SEC_CNT) {
 
-                if (tlv.it_len != 12){//TODO AR: removed because it_len always seems to be 12, this sets it as 4. sizeof(*img_security_cnt)) {
+                if (tlv.it_len != IMAGE_TLV_IT_LEN){//TODO AR: removed because it_len always seems to be 12, this sets it as 4. sizeof(*img_security_cnt)) {
                     /* Security counter is not valid. */
 
                     break;
