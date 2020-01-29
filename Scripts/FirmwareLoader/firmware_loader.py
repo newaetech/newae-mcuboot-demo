@@ -39,31 +39,40 @@ def main(argv):
     hex_bl_path = default_bl_path
     hex_a_path = default_fw_a_path
     hex_b_path = default_fw_b_path
+    print(hex_b_path)
+    mon = True
     
     try:    
-        opts,argv = getopt.getopt(argv,"h:bl:b:a",["bootloader_path=","a_path=","b_path="])
-    except getopt.GetoptError:
-        print('Path error detected, using default paths instead')
+        opts,argv = getopt.getopt(argv,"hml:b:a:",["bootloader_path=","a_path=","b_path="])
+        for opt, arg in opts:
+            if opt in ("-h", "--help"):
+                print ("firmware_loader.py -m -l <bl_path> -a <a_path> -b <b_path>")
+                sys.exit()
+            elif opt in ("m"):
+                mon=False
+            elif opt in ("-l", "--bootloader_path"):
+                hex_bl_path = arg                       
+            elif opt in ("-a", "--a_path"):
+                hex_a_path = arg
+            elif opt in ("-b", "--b_path"):
+                hex_b_path = arg  
+                print(hex_b_path)
+    except getopt.GetoptError as e:
+        print('Path error detected, using default paths instead' + str(e))
     
-    for opt, arg in opts:
-        if opt in ("-h", "--help"):
-            print ("firmware_loader.py -bl <bl_path> -a <a_path> -b <b_path>")
-            sys.exit()
-        elif opt in ("-bl", "--bootloader_path"):
-            hex_bl_path = arg                       
-        elif opt in ("-a", "--a_path"):
-            hex_bl_path = arg
-        elif opt in ("-b", "--b_path"):
-            hex_bl_path = arg  
-            
+
+    time.sleep(1)        
     setup()
     time.sleep(1)
     write_app_a(hex_a_path)
     time.sleep(1)
+    print(hex_b_path)
     write_app_b(hex_b_path)
     time.sleep(1)
+    print(hex_bl_path)
     write_bootloader(hex_bl_path)
-    monitor()
+    if mon:
+        monitor()
     
 def setup():    
 
