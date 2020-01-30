@@ -48,7 +48,7 @@ def main(argv):
             if opt in ("-h", "--help"):
                 print ("firmware_loader.py -m -l <bl_path> -a <a_path> -b <b_path>")
                 sys.exit()
-            elif opt in ("m"):
+            elif opt in ("-m"):
                 mon=False
             elif opt in ("-l", "--bootloader_path"):
                 hex_bl_path = arg                       
@@ -63,6 +63,8 @@ def main(argv):
 
     time.sleep(1)        
     setup()
+    time.sleep(1)
+    erase_bootloader_mem(hex_bl_path)
     time.sleep(1)
     write_app_a(hex_a_path)
     time.sleep(1)
@@ -80,6 +82,16 @@ def setup():
     time.sleep(0.05)
     scope.default_setup()
     helper.reset_target(scope)
+    
+def erase_bootloader_mem(fw_path):
+    prog_type = cw.programmers.STM32FProgrammer
+    prog = prog_type()
+    prog.scope = scope
+    prog._logging = None
+    prog.open()
+    prog.find()
+    prog.erase(True, fw_path)
+    prog.close()
     
 def write_bootloader(fw_path):
     print("Programming bootloader...")
