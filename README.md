@@ -14,7 +14,7 @@ This project is based off of three main sources
 -ChipWhisperer for base hardware platform and python programming [cw](https://github.com/newaetech/chipwhisperer)
 -Juul image signing tool as tf-m had features the STM32F303 could not support (Secure/Non-Secure partitions) [mcuboot](https://github.com/JuulLabs-OSS/mcuboot)
 
-In future developments NewAE's Chip Armour will be used
+In future developments NewAE's Chip Armour will be used to demonstrate how a complex bootloader can be secured.
 
 # Operation
 
