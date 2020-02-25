@@ -68,13 +68,51 @@ def main(argv):
     time.sleep(1)
     write_app_a(hex_a_path)
     time.sleep(1)
-    print(hex_b_path)
-    write_app_b(hex_b_path)
+
     time.sleep(1)
     print(hex_bl_path)
     write_bootloader(hex_bl_path)
-    if mon:
-        monitor()
+    
+    #print(hex_b_path)
+    #write_app_b(hex_b_path)
+    do_glitch(hex_b_path)
+    #if mon:
+    #    monitor()
+        
+def do_glitch(hex_b_path):
+    from collections import namedtuple
+    scope.glitch.clk_src = "clkgen"
+    scope.glitch.output = "clock_xor"
+    scope.glitch.trigger_src = "ext_single"
+    scope.io.hs2 = "glitch"
+    offset_range = Range(-49, -30, 1)
+    scope.glitch.ext_offset = 0
+    scope.glitch.repeat = 10
+    
+    target.flush()
+    scope.arm()
+    write_app_b(hex_b_path)
+    ret = scope.capture()
+    offset_range = Range(-41, -35, 1)
+    width_range = Range(-10, -5, 1)
+    if ret:
+        print("Timeout happened during acquisition")
+        
+    
+    
+
+    
+def glitched():
+    line = ""
+    while(1):
+        line += target.read()
+        if('\n' in line):
+            if ("Running A" in line):
+                return 0
+            elif ("Running B" in line):
+                return 1
+            print(line)
+            line = ""
     
 def setup():    
 

@@ -31,10 +31,12 @@
 
 #include <assert.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <stdbool.h>
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
+#include <hal.h>
 #include "flash_map/flash_map.h"
 #include "bootutil/bootutil.h"
 #include "bootutil/image.h"
@@ -166,27 +168,34 @@ boot_verify_image_header(struct image_header *hdr)
     uint32_t image_end;
 
     if (hdr->ih_magic != IMAGE_MAGIC) {
+		//char msg[256];
+		//snprintf(msg, 255, "Bad image magic number %lX", hdr->ih_magic);
+		//serial_transmit(msg);
         return BOOT_EBADIMAGE;
     }
 
     /* Check input parameters against integer overflow */
     if (boot_add_uint32_overflow_check(hdr->ih_hdr_size, hdr->ih_img_size)) {
+		BOOT_LOG_ERR("Failed size overflow check");
         return BOOT_EBADIMAGE;
     }
 
     image_end = hdr->ih_hdr_size + hdr->ih_img_size;
     if (boot_add_uint32_overflow_check(image_end, hdr->ih_protect_tlv_size)) {
+		BOOT_LOG_ERR("Failed end overflow check");
         return BOOT_EBADIMAGE;
     }
 
 
 #if MCUBOOT_RAM_LOADING
     if (!(hdr->ih_flags & IMAGE_F_RAM_LOAD)) {
+		BOOT_LOG_ERR("No ram load");
         return BOOT_EBADIMAGE;
     }
 
     /* Check input parameters against integer overflow */
     if (boot_add_uint32_overflow_check(image_end, hdr->ih_load_addr)) {
+		BOOT_LOG_ERR("Failed end overflow check");
         return BOOT_EBADIMAGE;
     }
 #endif
@@ -207,9 +216,17 @@ boot_read_image_header(int slot, struct image_header *out_hdr)
         rc = BOOT_EFLASH;
         goto done;
     }
+	/*
+	char buf[512];
+	uint16_t tmp_id = fap->fa_id;
+	snprintf(buf, 255, "flash: id=%hX, pad=%hX, offset=%X, size=%X\n", tmp_id, fap->pad16, fap->fa_off, fap->fa_size);
+	serial_transmit(buf);*/
 
     rc = flash_area_read(fap, 0, out_hdr, sizeof(*out_hdr));
-
+	/*snprintf(buf, 255, "flash: magic=%X, loadaddr=%X, hdr_size=%hX, tlv_area=%hX\nimg_size=%X, flags=%X\n"
+	, out_hdr->ih_magic, out_hdr->ih_load_addr, out_hdr->ih_hdr_size, out_hdr->ih_protect_tlv_size,
+	out_hdr->ih_img_size, out_hdr->ih_flags);
+	serial_transmit(buf);*/
     if (rc != 0) {
         rc = BOOT_EFLASH;
         goto done;
@@ -310,11 +327,13 @@ boot_image_check(struct image_header *hdr, const struct flash_area *fap,
     static uint8_t tmpbuf[BOOT_TMPBUF_SZ];
 
     (void)bs;
-
+	trigger_high();
     if (bootutil_img_validate(hdr, fap, tmpbuf, BOOT_TMPBUF_SZ,
                               NULL, 0, NULL)) {
+		trigger_low();
         return BOOT_EBADIMAGE;
     }
+	
     return 0;
 }
 
@@ -376,11 +395,11 @@ boot_validate_slot(int slot, struct boot_status *bs)
         (hdr->ih_flags & IMAGE_F_NON_BOOTABLE)) {
         /* No bootable image in slot; continue booting from the primary slot. */
         rc = -1;
+		BOOT_LOG_ERR("No bootable image in slot");
         goto out;
     }
-
-    if (!(BOOT_IMG_HDR_IS_VALID(&boot_data, slot)) ||
-         (boot_image_check(hdr, fap, bs) != 0)) {
+    if ((!(BOOT_IMG_HDR_IS_VALID(&boot_data, slot)) ||
+         (boot_image_check(hdr, fap, bs) != 0))) {
         if (slot != BOOT_PRIMARY_SLOT) {
             rc = flash_area_erase(fap, 0, fap->fa_size);
             if(rc != 0) {
@@ -391,8 +410,9 @@ boot_validate_slot(int slot, struct boot_status *bs)
              * continue booting from the primary slot.
              */
         }
+		trigger_low();
         BOOT_LOG_ERR("Authentication failed! Image in the %s slot is not valid."
-                     , (slot == BOOT_PRIMARY_SLOT) ? "primary" : "secondary");               
+                     , (slot == BOOT_PRIMARY_SLOT) ? "primary" : "secondary");     //this is where it fails when keys.c is changed.          
         rc = -1;
         goto out;
     }

@@ -192,7 +192,11 @@ uint8_t flash_area_erased_val(const struct flash_area *area)
 int flash_area_read(const struct flash_area *area, uint32_t off, void *dst,
                     uint32_t len)
 {
-    BOOT_LOG_DBG("read area=%d, off=%#x, len=%#x", area->fa_id, off, len);
+	/*
+	char buf[256];
+	snprintf(buf, 255, "read area=%d, off=%#x, len=%#x, ReadData=%#x\n", 
+		area->fa_id, off, len, FLASH_DEV_NAME.ReadData);
+    serial_transmit(buf);*/
 
     return FLASH_DEV_NAME.ReadData(area->fa_off + off, dst, len);
 }

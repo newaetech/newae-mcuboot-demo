@@ -1,6 +1,6 @@
 echo Making bootloader
 cd ..\bootloader
-make PLATFORM=CWLITEARM
+make PLATFORM=CWLITEARM -j4
 
 #pause
 

@@ -18,6 +18,7 @@
 #define H_BOOTUTIL_LOG_H_
 
 #include "ignore.h"
+#include "../serial_abstract.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,11 +41,12 @@ extern "C" {
 #endif
 
 int sim_log_enabled(int level);
-
+#define xstr(X) stringify(X)
+#define stringify(X) #X
 
 #if BOOT_LOG_LEVEL >= BOOT_LOG_LEVEL_ERROR
 #define BOOT_LOG_ERR(_fmt, ...)                  \
-  //  printf("[ERR] " _fmt "\r\n", ##__VA_ARGS__)
+    serial_transmit("[ERR] " _fmt" "xstr(__FILE__)" "xstr(__LINE__) "\r\n")
 
 #else
 #define BOOT_LOG_ERR(...) IGNORE(__VA_ARGS__)
@@ -52,14 +54,14 @@ int sim_log_enabled(int level);
 
 #if BOOT_LOG_LEVEL >= BOOT_LOG_LEVEL_WARNING
 #define BOOT_LOG_WRN(_fmt, ...)                  \
-    //printf("[WRN] " _fmt "\r\n", ##__VA_ARGS__)
+    serial_transmit("[WRN] " _fmt" "xstr(__FILE__)" "xstr(__LINE__) "\r\n")
 #else
 #define BOOT_LOG_WRN(...) IGNORE(__VA_ARGS__)
 #endif
 
 #if BOOT_LOG_LEVEL >= BOOT_LOG_LEVEL_INFO
 #define BOOT_LOG_INF(_fmt, ...)                  \
-   // printf("[INF] " _fmt "\r\n", ##__VA_ARGS__)
+   serial_transmit("[INF] " _fmt" "xstr(__FILE__)" "xstr(__LINE__) "\r\n")
 #else
 #define BOOT_LOG_INF(...) IGNORE(__VA_ARGS__)
 #endif

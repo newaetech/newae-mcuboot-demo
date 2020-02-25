@@ -41,7 +41,8 @@ int main(void)
 
     platform_init();
     init_uart();
-    //trigger_setup();
+    trigger_setup();
+	trigger_low();
 
 
 
